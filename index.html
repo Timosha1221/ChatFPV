@@ -11,9 +11,6 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- EmailJS SDK for direct email delivery -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
@@ -105,7 +102,7 @@
     </div>
   </div>
 
-  <!-- Main Auth Screen (Login / Register via Email + OTP Code) -->
+  <!-- Main Auth Screen (Login / Register via Username & Password) -->
   <div id="authScreen" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col justify-between p-6 overflow-y-auto">
     <div class="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center my-auto">
       <div class="text-center mb-6">
@@ -116,7 +113,7 @@
           <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0e1621] flex items-center justify-center text-[10px] text-white font-bold">✓</span>
         </div>
         <h1 class="text-2xl font-black text-white tracking-tight">FPVChat</h1>
-        <p class="text-xs text-slate-400 mt-0.5">Вход по почте и паролю</p>
+        <p class="text-xs text-slate-400 mt-0.5">Быстрый защищённый вход без почты</p>
       </div>
 
       <!-- Segment Tabs -->
@@ -128,10 +125,10 @@
       <!-- Login View -->
       <div id="viewLogin" class="space-y-3">
         <div>
-          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Email или Никнейм</label>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Никнейм (@username)</label>
           <div class="relative">
-            <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-            <input type="text" id="loginEmailOrUser" placeholder="timosapletnev@gmail.com или @username" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+            <i data-lucide="at-sign" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="loginUsername" placeholder="Например: evlan666" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
           </div>
         </div>
         <div>
@@ -147,77 +144,52 @@
         </button>
         <div class="text-center pt-1">
           <span class="text-[11px] text-slate-400">Нет аккаунта? </span>
-          <button onclick="window.switchAuthTab('register')" class="text-[11px] text-[#50b5ff] font-semibold hover:underline">Зарегистрироваться</button>
+          <button onclick="window.switchAuthTab('register')" class="text-[11px] text-[#50b5ff] font-semibold hover:underline">Создать аккаунт</button>
         </div>
       </div>
 
-      <!-- Register View: Step 1 (Input fields) -->
+      <!-- Register View -->
       <div id="viewRegister" style="display: none;" class="space-y-3">
-        <div id="regStepFields" class="space-y-3">
-          <div>
-            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Электронная почта (куда придет код)</label>
-            <div class="relative">
-              <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-              <input type="email" id="regEmail" placeholder="name@gmail.com" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
-            </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Придумайте никнейм (@username)</label>
+          <div class="relative">
+            <i data-lucide="at-sign" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="regUsername" placeholder="alex_fpv, dima123" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
           </div>
-          <div>
-            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Придумайте никнейм</label>
-            <div class="relative">
-              <i data-lucide="at-sign" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-              <input type="text" id="regUsername" placeholder="alex, dima, nikita" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
-            </div>
-          </div>
-          <div>
-            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Пароль</label>
-            <div class="relative">
-              <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-              <input type="password" id="regPassword" placeholder="Минимум 4 символа" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
-            </div>
-          </div>
-          <div>
-            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Год рождения</label>
-            <div class="relative">
-              <i data-lucide="calendar" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-              <input type="number" id="regBirthYear" onkeydown="if(event.key==='Enter') window.handleSendRegistrationCode()" placeholder="Например: 2005" min="1940" max="2026" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
-            </div>
-          </div>
-          <button onclick="window.handleSendRegistrationCode()" id="btnSendRegCode" class="w-full py-3.5 mt-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 active:scale-98 text-white font-bold text-sm shadow-xl shadow-emerald-600/25 transition flex items-center justify-center gap-2">
-            <span>Получить код на почту</span>
-            <i data-lucide="send" class="w-4 h-4"></i>
-          </button>
+          <p class="text-[10px] text-slate-500 mt-1 ml-1">Уникальный ID профиля, его нельзя будет изменить.</p>
         </div>
-
-        <!-- Register View: Step 2 (Verify OTP Code) -->
-        <div id="regStepOtp" style="display: none;" class="space-y-3">
-          <div class="p-3.5 rounded-2xl bg-[#0e1621] border border-sky-500/30 text-center">
-            <span class="text-xs text-slate-300 block">Мы отправили 6-значный код на почту:</span>
-            <span id="regTargetEmailDisplay" class="text-xs font-bold text-sky-400 block mt-0.5 truncate">mail@gmail.com</span>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Отображаемое имя</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="regDisplayName" placeholder="Ваше имя (можно менять)" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
           </div>
-
-          <div>
-            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Введите 6-значный код</label>
-            <div class="relative">
-              <i data-lucide="key-round" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-              <input type="text" id="regOtpInput" maxlength="6" onkeydown="if(event.key==='Enter') window.handleVerifyRegistrationCode()" placeholder="123456" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-3 text-base font-mono tracking-widest text-center text-white focus:outline-none focus:border-[#50b5ff] transition">
-            </div>
-          </div>
-
-          <button onclick="window.handleVerifyRegistrationCode()" id="btnVerifyRegCode" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 active:scale-98 text-white font-bold text-sm shadow-xl shadow-emerald-600/25 transition flex items-center justify-center gap-2">
-            <span>Подтвердить и войти</span>
-            <i data-lucide="check" class="w-4 h-4"></i>
-          </button>
-
-          <div class="flex items-center justify-between pt-1">
-            <button onclick="window.resetRegOtpStep()" class="text-[11px] text-slate-400 hover:text-white transition">Изменить почту</button>
-            <button id="btnResendRegCode" onclick="window.handleResendCode()" class="text-[11px] text-[#50b5ff] font-semibold hover:underline">Отправить код снова</button>
+          <p class="text-[10px] text-slate-500 mt-1 ml-1">Это имя увидят другие. Его можно менять в настройках.</p>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Пароль (от 4 символов)</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="password" id="regPassword" placeholder="Придумайте пароль" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
           </div>
         </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Год рождения</label>
+          <div class="relative">
+            <i data-lucide="calendar" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="number" id="regBirthYear" onkeydown="if(event.key==='Enter') window.handleRegistrationSubmit()" placeholder="Например: 2005" min="1940" max="2026" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+          </div>
+        </div>
+
+        <button onclick="window.handleRegistrationSubmit()" id="btnRegisterSubmit" class="w-full py-3.5 mt-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 active:scale-98 text-white font-bold text-sm shadow-xl shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+          <span>Зарегистрироваться в FPVChat</span>
+          <i data-lucide="check" class="w-4 h-4"></i>
+        </button>
       </div>
     </div>
 
     <div class="text-center text-[11px] text-slate-500 pb-2 safe-bottom">
-      FPVChat • Защищенный мессенджер
+      FPVChat • Защищенный быстрый мессенджер
     </div>
   </div>
 
@@ -241,7 +213,7 @@
     </div>
   </div>
 
-  <!-- Active Call Overlay -->
+  <!-- Active Call Overlay with Flip Camera Support -->
   <div id="callOverlay" style="display: none;" class="fixed inset-0 z-[140] bg-[#0e1621] flex flex-col justify-between p-4">
     <header class="flex items-center justify-between safe-top pt-2">
       <div class="flex items-center gap-3">
@@ -270,22 +242,30 @@
       <video id="localVideo" autoplay playsinline muted style="display: none;" class="absolute bottom-4 right-4 w-28 h-40 object-cover rounded-2xl border-2 border-[#50b5ff] shadow-2xl bg-black"></video>
     </div>
 
-    <div class="flex items-center justify-center gap-6 pb-6 safe-bottom">
-      <button id="btnToggleMic" onclick="window.toggleCallMic()" class="w-14 h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-white flex items-center justify-center shadow-lg transition">
-        <i id="iconMic" data-lucide="mic" class="w-6 h-6"></i>
+    <!-- Call Control Buttons -->
+    <div class="flex items-center justify-center gap-4 sm:gap-6 pb-6 safe-bottom">
+      <button id="btnToggleMic" onclick="window.toggleCallMic()" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-white flex items-center justify-center shadow-lg transition" title="Микрофон">
+        <i id="iconMic" data-lucide="mic" class="w-5 h-5 sm:w-6 sm:h-6"></i>
       </button>
-      <button onclick="window.endActiveCall()" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-xl active:scale-95 transition">
-        <i data-lucide="phone-off" class="w-7 h-7"></i>
+      
+      <!-- Flip / Switch Camera Button -->
+      <button id="btnFlipCamera" onclick="window.flipCallCamera()" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-sky-400 flex items-center justify-center shadow-lg transition active:scale-95" title="Перевернуть камеру">
+        <i id="iconFlip" data-lucide="switch-camera" class="w-5 h-5 sm:w-6 sm:h-6"></i>
       </button>
-      <button id="btnToggleVideo" onclick="window.toggleCallVideo()" class="w-14 h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-white flex items-center justify-center shadow-lg transition">
-        <i id="iconCam" data-lucide="video" class="w-6 h-6"></i>
+
+      <button onclick="window.endActiveCall()" class="w-15 h-15 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-xl active:scale-95 transition" title="Завершить вызов">
+        <i data-lucide="phone-off" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+      </button>
+
+      <button id="btnToggleVideo" onclick="window.toggleCallVideo()" class="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-white flex items-center justify-center shadow-lg transition" title="Камера">
+        <i id="iconCam" data-lucide="video" class="w-5 h-5 sm:w-6 sm:h-6"></i>
       </button>
     </div>
   </div>
 
   <!-- Main Application Wrapper -->
   <div id="mainApp" class="flex-1 flex flex-col h-full w-full overflow-hidden">
-    <!-- Top Header in Telegram Style -->
+    <!-- Top Header -->
     <header class="h-14 bg-[#17212b] px-4 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#2481cc] to-[#50b5ff] flex items-center justify-center text-white shadow-sm">
@@ -343,11 +323,11 @@
             </button>
           </div>
 
-          <!-- Telegram-style Stories & Online Circle Carousel -->
+          <!-- Stories Carousel -->
           <div>
             <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
               <span class="flex items-center gap-1">
-                <i data-lucide="flame" class="w-3 h-3 text-amber-400"></i> В сети сейчас:
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400"></i> В сети сейчас:
               </span>
               <span class="text-sky-400 text-[10px] cursor-pointer hover:underline" onclick="window.openNewChatModal()">Все контакты →</span>
             </div>
@@ -366,7 +346,7 @@
 
         <!-- Chat List Items -->
         <div class="divide-y divide-[#17212b] flex-1">
-          <!-- Support Chat (Pinned) -->
+          <!-- Support Chat -->
           <div id="itemSupportChat" onclick="window.openSupportChat()" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/60 cursor-pointer transition">
             <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-[#2481cc] to-sky-400 flex items-center justify-center text-white shrink-0 shadow">
               <i data-lucide="headset" class="w-6 h-6"></i>
@@ -379,7 +359,7 @@
                 </div>
                 <span class="text-[10px] text-sky-400 font-bold bg-sky-500/10 px-1.5 py-0.5 rounded">СЕРВИС</span>
               </div>
-              <p class="text-xs text-slate-400 truncate">Официальный информационный канал FPVChat</p>
+              <p id="supportChatPreviewText" class="text-xs text-slate-400 truncate">Официальный информационный канал FPVChat</p>
             </div>
           </div>
 
@@ -405,8 +385,8 @@
         <!-- Profile Banner Card -->
         <div class="bg-[#17212b] p-4 border-b border-[#242f3d] flex items-center justify-between mb-3">
           <div class="flex items-center gap-3.5">
-            <div onclick="window.openAvatarModal()" class="relative cursor-pointer">
-              <img id="settingsAvatarImg" src="https://placehold.co/100x100/2481cc/ffffff?text=U" class="w-16 h-16 rounded-full object-cover border-2 border-[#50b5ff]">
+            <div onclick="window.openAvatarModal()" class="relative cursor-pointer group" title="Нажмите, чтобы изменить аватарку">
+              <img id="settingsAvatarImg" src="https://placehold.co/100x100/2481cc/ffffff?text=U" class="w-16 h-16 rounded-full object-cover border-2 border-[#50b5ff] shadow-md group-hover:opacity-90 transition">
               <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-white text-[10px] shadow">
                 <i data-lucide="camera" class="w-3 h-3"></i>
               </div>
@@ -421,7 +401,6 @@
                 <span id="settingsRoleBadge" style="display: none;" class="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">МОДЕРАТОР</span>
               </div>
               <span id="settingsUsernameTag" class="text-xs text-sky-400 block font-medium">@username</span>
-              <span id="settingsEmailTag" class="text-[11px] text-slate-400 block">mail@gmail.com</span>
               <span id="settingsBioTag" class="text-[11px] text-slate-300 italic block mt-0.5">О себе: на связи в FPVChat</span>
             </div>
           </div>
@@ -445,13 +424,42 @@
           </div>
         </div>
 
-        <!-- Settings Action Links in Telegram Style -->
+        <!-- Settings Action Links -->
         <div class="px-3 space-y-3 pb-8">
           <div class="bg-[#17212b] rounded-2xl border border-[#242f3d] divide-y divide-[#242f3d]/60 overflow-hidden">
+            <!-- Edit Display Name -->
+            <button onclick="window.openNameModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <i data-lucide="user-pen" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-semibold text-white block">Изменить имя</span>
+                  <span class="text-[10px] text-slate-400 block">Отображаемое имя в диалогах (никнейм не меняется)</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+
+            <!-- Edit Avatar (New from device storage) -->
+            <button onclick="window.openAvatarModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                  <i data-lucide="image" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-semibold text-white block">Сменить аватарку</span>
+                  <span class="text-[10px] text-slate-400 block">Выбрать фото из памяти телефона или галереи</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+
+            <!-- Edit Bio -->
             <button onclick="window.openBioModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                  <i data-lucide="user" class="w-4 h-4"></i>
+                  <i data-lucide="file-text" class="w-4 h-4"></i>
                 </div>
                 <div>
                   <span class="text-xs font-semibold text-white block">Изменить «О себе»</span>
@@ -461,6 +469,7 @@
               <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
             </button>
 
+            <!-- Request Verification Badge -->
             <button onclick="window.requestVerification()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
@@ -474,7 +483,7 @@
               <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
             </button>
 
-            <!-- Admin Panel Button: STRICTLY HIDDEN UNTIL OWNER OR MODERATOR -->
+            <!-- Admin Panel Button: Strictly visible for Owner or Moderator -->
             <button id="btnSettingsAdminPanel" onclick="window.openAdminPanel()" style="display: none;" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
@@ -599,7 +608,7 @@
     </div>
   </div>
 
-  <!-- System Support Chat -->
+  <!-- System Support Chat (Channel with Official News) -->
   <div id="supportChatRoom" style="display: none;" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col h-full overflow-hidden">
     <header class="h-14 bg-[#17212b] px-3.5 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
       <div class="flex items-center gap-2.5">
@@ -614,19 +623,19 @@
             <span class="text-xs font-bold text-white">Служба поддержки</span>
             <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>
           </div>
-          <span class="text-[10px] text-sky-400 block font-medium">официальный сервис</span>
+          <span class="text-[10px] text-sky-400 block font-medium">официальный информационный канал</span>
         </div>
       </div>
     </header>
 
     <div id="supportMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
       <div class="bg-[#17212b] p-3.5 rounded-2xl border border-[#242f3d] text-xs text-slate-300 max-w-[85%] leading-relaxed shadow-md">
-        Добро пожаловать в FPVChat! В этот системный канал поступают официальные оповещения, подтверждения безопасности и системные уведомления.
+        Добро пожаловать в FPVChat! В этот системный канал поступают официальные новости, оповещения об обновлениях и системные уведомления.
       </div>
     </div>
 
     <div class="p-3 bg-[#17212b] border-t border-[#242f3d] text-center text-xs text-slate-500 safe-bottom">
-      В этот чат нельзя отправлять сообщения
+      Только администрация может публиковать новости в этот канал
     </div>
   </div>
 
@@ -659,22 +668,26 @@
       </div>
     </div>
 
-    <!-- Admin Tabs -->
+    <!-- Admin Tabs: Awards, News, Requests, Bans -->
     <div class="flex bg-[#17212b] p-1 mx-3 my-2 rounded-xl text-xs border border-[#242f3d]">
       <button id="tabAdminActions" onclick="window.switchAdminTab('actions')" class="flex-1 py-1.5 rounded-lg bg-[#2481cc] text-white font-medium transition">
-        Выдача наград
+        Награды
+      </button>
+      <button id="tabAdminNews" onclick="window.switchAdminTab('news')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium transition flex items-center justify-center gap-1">
+        <i data-lucide="newspaper" class="w-3.5 h-3.5"></i>
+        <span>Новости</span>
       </button>
       <button id="tabAdminRequests" onclick="window.switchAdminTab('requests')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium flex items-center justify-center gap-1 transition">
-        <span>Запросы галочки</span>
+        <span>Запросы</span>
         <span id="badgeReqCount" style="display: none;" class="bg-sky-500 text-white rounded-full px-1.5 py-0.2 text-[9px] font-bold">0</span>
       </button>
       <button id="tabAdminBans" onclick="window.switchAdminTab('bans')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium flex items-center justify-center gap-1 transition">
-        <span>Блокировки</span>
+        <span>Баны</span>
         <span id="badgeBansCount" style="display: none;" class="bg-red-500 text-white rounded-full px-1.5 py-0.2 text-[9px] font-bold">0</span>
       </button>
     </div>
 
-    <!-- Admin Content: Actions (Awards) -->
+    <!-- 1. Admin Content: Actions (Awards) -->
     <div id="adminContentActions" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
       <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
         <div class="flex items-center justify-between">
@@ -715,7 +728,7 @@
 
       <!-- Quick User Action Cards List -->
       <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
-        <span class="text-xs font-bold text-white block">Быстрые действия с участниками:</span>
+        <span class="text-xs font-bold text-white block">Список зарегистрированных аккаунтов:</span>
         <div id="adminDirectUserCards" class="space-y-1.5 max-h-48 overflow-y-auto">
           <div class="text-[11px] text-slate-500 py-2 text-center">Загрузка списка...</div>
         </div>
@@ -731,7 +744,35 @@
       </div>
     </div>
 
-    <!-- Admin Content: Verification Requests (Owner Only) -->
+    <!-- 2. Admin Content: News Publishing (Owner Only) -->
+    <div id="adminContentNews" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
+      <div class="p-3.5 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2.5">
+        <div class="flex items-center gap-2">
+          <i data-lucide="megaphone" class="w-4 h-4 text-amber-400"></i>
+          <h4 class="text-xs font-bold text-white">Опубликовать новость в «Службу поддержки»</h4>
+        </div>
+        <p class="text-[11px] text-slate-400">Сообщение появится у всех пользователей в официальном системном чате поддержки.</p>
+        
+        <textarea id="adminNewsTextInput" rows="4" placeholder="Введите текст новости, обновления или системного оповещения..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#50b5ff] resize-none"></textarea>
+        
+        <button id="btnPublishNews" onclick="window.publishNewsAction()" class="w-full py-2.5 bg-gradient-to-r from-[#2481cc] to-[#50b5ff] hover:opacity-95 text-white font-semibold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-98">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span>Опубликовать новость</span>
+        </button>
+      </div>
+
+      <div>
+        <h4 class="text-xs font-semibold text-slate-300 mb-2 px-1 flex items-center gap-1.5">
+          <i data-lucide="history" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Опубликованные новости</span>
+        </h4>
+        <div id="adminPublishedNewsList" class="space-y-2">
+          <div class="text-center py-6 text-xs text-slate-500">Загрузка новостей...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Admin Content: Verification Requests (Owner Only) -->
     <div id="adminContentRequests" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-2 pb-8">
       <div class="p-2.5 bg-[#17212b] rounded-2xl border border-[#242f3d] text-xs text-slate-300">
         Заявки пользователей на получение официального значка верификации.
@@ -741,7 +782,7 @@
       </div>
     </div>
 
-    <!-- Admin Content: Bans (Owner Only) -->
+    <!-- 4. Admin Content: Bans (Owner Only) -->
     <div id="adminContentBans" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
       <div class="p-3.5 bg-[#17212b] rounded-2xl border border-red-500/30 space-y-2.5">
         <h4 class="text-xs font-bold text-red-400 flex items-center gap-1.5">
@@ -787,7 +828,7 @@
       </header>
 
       <div class="p-3 border-b border-[#242f3d]/60">
-        <input type="text" id="newChatSearchInput" oninput="window.filterNewChatUsers(this.value)" placeholder="Поиск по никнейму или email..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+        <input type="text" id="newChatSearchInput" oninput="window.filterNewChatUsers(this.value)" placeholder="Поиск по никнейму или имени..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
       </div>
 
       <div id="newChatUsersList" class="flex-1 overflow-y-auto p-3 space-y-1.5">
@@ -823,6 +864,29 @@
     </div>
   </div>
 
+  <!-- Edit Display Name Modal -->
+  <div id="nameModal" style="display: none;" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+          <i data-lucide="user-pen" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-white">Изменить имя</h3>
+          <p class="text-[10px] text-slate-400">Никнейм (@username) останется прежним</p>
+        </div>
+      </div>
+      <div>
+        <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Новое отображаемое имя</label>
+        <input type="text" id="displayNameInput" placeholder="Ваше имя" maxlength="32" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.closeNameModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold hover:bg-slate-700 transition">Отмена</button>
+        <button onclick="window.saveDisplayNameAction()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] hover:bg-[#50b5ff] text-xs text-white font-semibold transition">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bio Modal -->
   <div id="bioModal" style="display: none;" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
@@ -835,14 +899,52 @@
     </div>
   </div>
 
-  <!-- Avatar Modal -->
+  <!-- Avatar Modal (Device Storage & Gallery Support) -->
   <div id="avatarModal" style="display: none;" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
-      <h3 class="text-sm font-bold text-white">Изменить аватарку</h3>
-      <input type="text" id="avatarUrlInput" placeholder="Ссылка на картинку (https://...)" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
-      <div class="flex gap-2">
-        <button onclick="window.closeAvatarModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold">Отмена</button>
-        <button onclick="window.saveAvatarAction()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] text-xs text-white font-semibold">Сохранить</button>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
+            <i data-lucide="image" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Сменить аватарку</h3>
+            <p class="text-[10px] text-slate-400">Выберите фото из памяти телефона</p>
+          </div>
+        </div>
+        <button onclick="window.closeAvatarModal()" class="p-1 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Preview Avatar -->
+      <div class="flex flex-col items-center justify-center py-2">
+        <div class="relative">
+          <img id="avatarModalPreviewImg" src="https://placehold.co/120x120/2481cc/ffffff?text=Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-[#2481cc] shadow-xl">
+          <span class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#50b5ff] border-2 border-[#17212b] flex items-center justify-center text-white text-xs shadow">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- File input from device -->
+      <div>
+        <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="window.handleAvatarFileSelect(event)">
+        <button onclick="document.getElementById('avatarFileInput').click()" class="w-full py-3 rounded-2xl bg-[#242f3d] hover:bg-[#2b5278] active:scale-98 text-white font-semibold text-xs border border-[#50b5ff]/30 shadow flex items-center justify-center gap-2 transition">
+          <i data-lucide="folder-up" class="w-4 h-4 text-sky-400"></i>
+          <span>Выбрать из памяти телефона / галереи</span>
+        </button>
+      </div>
+
+      <!-- Alternative URL -->
+      <div>
+        <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Или вставьте ссылку на картинку</label>
+        <input type="text" id="avatarUrlInput" oninput="window.handleAvatarUrlInput(this.value)" placeholder="https://..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button onclick="window.closeAvatarModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold hover:bg-slate-700 transition">Отмена</button>
+        <button onclick="window.saveAvatarAction()" id="btnSaveAvatar" class="flex-1 py-3 rounded-2xl bg-[#2481cc] hover:bg-[#50b5ff] text-xs text-white font-semibold shadow transition">Сохранить</button>
       </div>
     </div>
   </div>
@@ -860,7 +962,7 @@
     <div id="settingsSubpageContent" class="flex-1 overflow-y-auto p-4 space-y-4 safe-bottom"></div>
   </div>
 
-  <!-- Application Logic -->
+  <!-- Application Logic with Direct Cloud Firestore -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
@@ -868,7 +970,7 @@
       onSnapshot, addDoc, getDocs, deleteDoc 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Firebase Config
+    // Firebase Project Config
     const firebaseConfig = {
       apiKey: "AIzaSyDFuJ9SILGuXVKWcbYyNj0_7eWZFVnVSoI",
       authDomain: "fpvchat-web.firebaseapp.com",
@@ -886,29 +988,12 @@
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
     } catch(e) {
-      console.warn("Firebase init:", e);
+      console.warn("Firebase Init Error:", e);
     }
 
-    // =========================================================================
-    // НАСТРОЙКИ ПОЧТЫ (EMAILJS)
-    // Зарегистрируйтесь на https://www.emailjs.com/ и вставьте ваши ключи сюда:
-    // =========================================================================
-    const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";   // Вставьте сюда Public Key из EmailJS -> Account -> API Keys
-    const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";   // Вставьте сюда Service ID (например, service_gmail)
-    const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; // Вставьте сюда Template ID (например, template_otp)
-
-    try {
-      if (window.emailjs && EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-        emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-      }
-    } catch(e) {
-      console.warn("EmailJS init:", e);
-    }
-
-    // App Constants
+    // App Constants - Creator Credentials
     const ADMIN_USERNAME = 'evlan666';
-    const ADMIN_EMAIL = 'timosapletnev@gmail.com';
-    const ADMIN_PASS = 'gitlerzzz1488';
+    const ADMIN_PASS = '02092014PT';
 
     // Gifts catalog
     const GIFTS_CATALOG = [
@@ -925,6 +1010,8 @@
     let currentPeer = null;
     let allUsersList = [];
     let currentChatFilter = 'all';
+    
+    // WebRTC State
     let localStream = null;
     let remoteStream = null;
     let peerConnection = null;
@@ -932,21 +1019,22 @@
     let incomingCallData = null;
     let callTimerInterval = null;
     let callSeconds = 0;
+    let currentFacingMode = 'user'; // 'user' (front) or 'environment' (back)
+
+    // Avatar state
+    let pendingAvatarDataUrl = null;
 
     let unsubscribeUser = null;
     let unsubscribeUsers = null;
     let unsubscribeDirectMsgs = null;
     let unsubscribeDialogs = null;
     let unsubscribeVerifRequests = null;
-
-    // Registration Pending State with OTP Code
-    let pendingRegData = null;
-    let regResendTimer = null;
+    let unsubscribeNews = null;
 
     // Moderator Daily Limits State
     let modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
 
-    // Telegram-like Sound Generator using Web Audio API
+    // Sound Generator using Web Audio API
     let audioCtx = null;
     function getAudioCtx() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1011,7 +1099,7 @@
       t.style.display = 'flex';
       if (window.lucide) lucide.createIcons();
 
-      setTimeout(() => { t.style.display = 'none'; }, 4500);
+      setTimeout(() => { t.style.display = 'none'; }, 4000);
     };
 
     function escapeHtml(str) {
@@ -1038,7 +1126,24 @@
       document.getElementById('bioTextInput').value = currentUser?.bio || '';
       window.setModalVisible('bioModal', true);
     };
-    window.closeAvatarModal = () => window.setModalVisible('avatarModal', false);
+    window.closeNameModal = () => window.setModalVisible('nameModal', false);
+    window.openNameModal = () => {
+      document.getElementById('displayNameInput').value = currentUser?.displayName || currentUser?.username || '';
+      window.setModalVisible('nameModal', true);
+    };
+    window.closeAvatarModal = () => {
+      pendingAvatarDataUrl = null;
+      window.setModalVisible('avatarModal', false);
+    };
+    window.openAvatarModal = () => {
+      playTapSound();
+      pendingAvatarDataUrl = null;
+      const preview = document.getElementById('avatarModalPreviewImg');
+      const curAvatar = currentUser?.avatarUrl || 'https://placehold.co/120x120/2481cc/ffffff?text=Avatar';
+      if (preview) preview.src = curAvatar;
+      document.getElementById('avatarUrlInput').value = '';
+      window.setModalVisible('avatarModal', true);
+    };
     window.closeNewChatModal = () => window.setModalVisible('newChatModal', false);
     window.closeDirectChat = () => {
       window.setModalVisible('directChatRoom', false);
@@ -1051,6 +1156,84 @@
     window.minimizeCall = () => {
       window.setModalVisible('callOverlay', false);
       window.showToast("Звонок продолжается в фоне");
+    };
+
+    // Avatar from Phone Memory Handler (Canvas compression to Base64)
+    window.handleAvatarFileSelect = function(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        return window.showToast("Пожалуйста, выберите изображение!", true);
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxDim = 256;
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            if (w > maxDim) {
+              h = Math.round(h * maxDim / w);
+              w = maxDim;
+            }
+          } else {
+            if (h > maxDim) {
+              w = Math.round(w * maxDim / h);
+              h = maxDim;
+            }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          pendingAvatarDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          const preview = document.getElementById('avatarModalPreviewImg');
+          if (preview) preview.src = pendingAvatarDataUrl;
+          window.showToast("Фото загружено из памяти! Нажмите «Сохранить».");
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.handleAvatarUrlInput = function(val) {
+      const url = (val || '').trim();
+      const preview = document.getElementById('avatarModalPreviewImg');
+      if (preview && url) {
+        preview.src = url;
+        pendingAvatarDataUrl = url;
+      }
+    };
+
+    window.saveAvatarAction = async function() {
+      if (!currentUser || !db) return;
+      playTapSound();
+      const urlInput = (document.getElementById('avatarUrlInput')?.value || '').trim();
+      const finalAvatar = pendingAvatarDataUrl || urlInput;
+
+      if (!finalAvatar) {
+        return window.showToast("Сначала выберите фото или укажите ссылку!", true);
+      }
+
+      const btn = document.getElementById('btnSaveAvatar');
+      if (btn) { btn.disabled = true; btn.innerText = "Сохранение..."; }
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', currentUser.username), { avatarUrl: finalAvatar });
+        currentUser.avatarUrl = finalAvatar;
+        updateProfileUI();
+        window.closeAvatarModal();
+        window.showToast("Аватарка успешно обновлена!");
+      } catch(e) {
+        window.showToast("Ошибка сохранения: " + e.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Сохранить"; }
+      }
     };
 
     // Tab Switching for Auth
@@ -1075,65 +1258,52 @@
       if (window.lucide) lucide.createIcons();
     };
 
-    // Login with Email or Username + Password
+    // Login via Username + Password
     window.handleLoginSubmit = async function() {
       playTapSound();
-      const emailOrUserInput = document.getElementById('loginEmailOrUser');
+      const userInput = document.getElementById('loginUsername');
       const passInput = document.getElementById('loginPassword');
-      const queryKey = (emailOrUserInput?.value || '').trim().toLowerCase();
+      const rawUser = (userInput?.value || '').trim().toLowerCase().replace(/^@/, '');
       const pass = (passInput?.value || '').trim();
 
-      if (!queryKey) return window.showToast("Введите ваш Email или никнейм", true);
+      if (!rawUser) return window.showToast("Введите никнейм (@username)", true);
       if (!pass) return window.showToast("Введите пароль", true);
 
-      // Check if logging in as Primary Owner (Creator)
-      if ((queryKey === ADMIN_USERNAME.toLowerCase() || queryKey === ADMIN_EMAIL.toLowerCase()) && pass === ADMIN_PASS) {
+      // Check Creator Login
+      if (rawUser === ADMIN_USERNAME.toLowerCase() && pass === ADMIN_PASS) {
         await performCreatorLogin();
         return;
       }
 
       const btn = document.getElementById('btnLoginSubmit');
-      if (btn) { btn.disabled = true; btn.innerText = "Проверка..."; }
+      if (btn) { btn.disabled = true; btn.innerText = "Вход..."; }
 
       try {
-        let targetDoc = null;
-        // 1. Direct try by username
-        const directSnap = await getDoc(doc(db, 'fpv_users', queryKey));
-        if (directSnap.exists()) {
-          targetDoc = directSnap.data();
-        } else {
-          // 2. Query by email
-          const allDocs = await getDocs(collection(db, 'fpv_users'));
-          allDocs.forEach(d => {
-            const u = d.data();
-            if ((u.email || '').toLowerCase() === queryKey) {
-              targetDoc = u;
-            }
-          });
-        }
+        const userRef = doc(db, 'fpv_users', rawUser);
+        const uSnap = await getDoc(userRef);
 
-        if (!targetDoc) {
-          window.showToast("Пользователь не найден. Зарегистрируйтесь!", true);
-          window.switchAuthTab('register');
+        if (!uSnap.exists()) {
+          window.showToast("Пользователь с таким никнеймом не найден!", true);
           return;
         }
 
-        // Check password
-        if (targetDoc.password && targetDoc.password !== pass) {
+        const userData = uSnap.data();
+
+        if (userData.password !== pass) {
           window.showToast("Неверный пароль!", true);
           return;
         }
 
-        // Check ban
-        if (targetDoc.isBanned) {
-          document.getElementById('bannedReasonText').innerText = targetDoc.banReason || 'Нарушение правил';
+        // Check ban status
+        if (userData.isBanned) {
+          document.getElementById('bannedReasonText').innerText = userData.banReason || 'Нарушение правил';
           window.setModalVisible('bannedModal', true);
           return;
         }
 
-        await updateDoc(doc(db, 'fpv_users', targetDoc.username), { isOnline: true });
-        initUserSession(targetDoc);
-        window.showToast(`С возвращением, ${targetDoc.displayName || targetDoc.username}!`);
+        await updateDoc(userRef, { isOnline: true });
+        initUserSession(userData);
+        window.showToast(`С возвращением, ${userData.displayName || userData.username}!`);
       } catch(err) {
         window.showToast("Ошибка входа: " + err.message, true);
       } finally {
@@ -1147,17 +1317,16 @@
 
       const ownerData = {
         username: ADMIN_USERNAME,
-        email: ADMIN_EMAIL,
         password: ADMIN_PASS,
-        displayName: "Создатель",
-        bio: "Создатель и владелец FPVChat",
+        displayName: snap.exists() ? (snap.data().displayName || "Создатель") : "Создатель",
+        bio: snap.exists() ? (snap.data().bio || "Создатель и владелец FPVChat") : "Создатель и владелец FPVChat",
         birthYear: 2000,
         role: 'owner',
         isVerified: true,
         isPremium: true,
         stars: 99999,
         gifts: ['crown', 'trophy'],
-        avatarUrl: 'https://placehold.co/120x120/2481cc/ffffff?text=OWNER',
+        avatarUrl: snap.exists() ? (snap.data().avatarUrl || 'https://placehold.co/120x120/2481cc/ffffff?text=OWNER') : 'https://placehold.co/120x120/2481cc/ffffff?text=OWNER',
         isOnline: true,
         createdAt: snap.exists() ? (snap.data().createdAt || Date.now()) : Date.now()
       };
@@ -1167,200 +1336,88 @@
       window.showToast("Вход Создателя выполнен успешно!");
     }
 
-    // Step 1: Send 6-Digit OTP Code to Email
-    window.handleSendRegistrationCode = async function() {
+    // Direct Fast Registration
+    window.handleRegistrationSubmit = async function() {
       playTapSound();
-      const emailInput = document.getElementById('regEmail');
-      const nameInput = document.getElementById('regUsername');
+      const userInput = document.getElementById('regUsername');
+      const nameInput = document.getElementById('regDisplayName');
       const passInput = document.getElementById('regPassword');
       const yearInput = document.getElementById('regBirthYear');
 
-      const email = (emailInput?.value || '').trim().toLowerCase();
-      const rawName = (nameInput?.value || '').trim();
+      const rawUser = (userInput?.value || '').trim().toLowerCase().replace(/^@/, '');
+      const displayName = (nameInput?.value || '').trim();
       const pass = (passInput?.value || '').trim();
       const birthYear = parseInt(yearInput?.value, 10);
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email || !emailRegex.test(email)) return window.showToast("Введите корректный Email", true);
-      if (!rawName) return window.showToast("Придумайте никнейм", true);
-      if (pass.length < 4) return window.showToast("Пароль должен быть не менее 4 символов", true);
-      if (!birthYear || birthYear < 1940 || birthYear > 2026) return window.showToast("Укажите корректный год рождения", true);
-
-      const username = rawName.toLowerCase().replace(/[^a-z0-9_]/g, '');
-      if (!username) return window.showToast("Никнейм должен содержать латинские буквы или цифры", true);
-      if (username === ADMIN_USERNAME.toLowerCase() || email === ADMIN_EMAIL.toLowerCase()) {
-        return window.showToast("Эти данные зарезервированы для Создателя! Войдите во вкладке «Войти».", true);
+      const usernameRegex = /^[a-z0-9_]{3,24}$/;
+      if (!rawUser || !usernameRegex.test(rawUser)) {
+        return window.showToast("Никнейм должен быть от 3 до 24 символов (латиница, цифры, _)", true);
+      }
+      if (!displayName) {
+        return window.showToast("Введите ваше имя", true);
+      }
+      if (pass.length < 4) {
+        return window.showToast("Пароль должен быть от 4 символов", true);
+      }
+      if (!birthYear || birthYear < 1940 || birthYear > 2026) {
+        return window.showToast("Укажите корректный год рождения", true);
       }
 
-      const btn = document.getElementById('btnSendRegCode');
-      if (btn) { btn.disabled = true; btn.innerText = "Отправка кода..."; }
+      if (rawUser === ADMIN_USERNAME.toLowerCase()) {
+        return window.showToast("Этот никнейм зарезервирован для Создателя! Перейдите во вкладку «Войти».", true);
+      }
+
+      const btn = document.getElementById('btnRegisterSubmit');
+      if (btn) { btn.disabled = true; btn.innerText = "Создание аккаунта..."; }
 
       try {
-        // Check if username already exists
-        const userRef = doc(db, 'fpv_users', username);
+        const userRef = doc(db, 'fpv_users', rawUser);
         const snap = await getDoc(userRef);
         if (snap.exists()) {
-          window.showToast("Этот никнейм уже занят!", true);
+          window.showToast("Этот никнейм уже занят! Выберите другой.", true);
           return;
         }
 
-        // Check if email already exists
-        const allDocs = await getDocs(collection(db, 'fpv_users'));
-        let emailExists = false;
-        allDocs.forEach(d => {
-          if ((d.data().email || '').toLowerCase() === email) emailExists = true;
-        });
-
-        if (emailExists) {
-          window.showToast("Этот Email уже зарегистрирован! Войдите по нему.", true);
-          window.switchAuthTab('login');
-          return;
-        }
-
-        // Generate 6-digit random code
-        const code = String(Math.floor(100000 + Math.random() * 900000));
-        pendingRegData = {
-          email,
-          username,
-          displayName: rawName,
-          password: pass,
-          birthYear,
-          code,
-          expiresAt: Date.now() + 10 * 60 * 1000
-        };
-
-        // Check if EmailJS keys are configured
-        const isEmailConfigured = EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY";
-
-        if (isEmailConfigured && window.emailjs) {
-          try {
-            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-              to_email: email,
-              user_name: rawName,
-              verification_code: code,
-              app_name: "FPVChat"
-            });
-            window.showToast(`Код отправлен на почту ${email}! Проверьте папку Входящие и Спам`);
-          } catch(emailErr) {
-            console.error("EmailJS send failed:", emailErr);
-            window.showToast(`Ошибка отправки письма: ${emailErr.text || emailErr.message || 'Проверьте ключи EmailJS'}. Код для входа: ${code}`, true);
-          }
-        } else {
-          // If keys are not configured yet, notify user and provide test code
-          window.showToast(`Ключи EmailJS не настроены в коде! Для проверки используйте код: ${code}`);
-        }
-
-        // Switch to OTP Code step
-        document.getElementById('regStepFields').style.display = 'none';
-        document.getElementById('regStepOtp').style.display = 'block';
-        document.getElementById('regTargetEmailDisplay').innerText = email;
-        document.getElementById('regOtpInput').value = '';
-
-        startResendTimer();
-      } catch(err) {
-        window.showToast("Ошибка: " + err.message, true);
-      } finally {
-        if (btn) { btn.disabled = false; btn.innerText = "Получить код на почту"; }
-      }
-    };
-
-    function startResendTimer() {
-      const btn = document.getElementById('btnResendRegCode');
-      if (!btn) return;
-      let left = 45;
-      btn.disabled = true;
-      btn.innerText = `Повтор через ${left}с`;
-      if (regResendTimer) clearInterval(regResendTimer);
-      regResendTimer = setInterval(() => {
-        left--;
-        if (left <= 0) {
-          clearInterval(regResendTimer);
-          btn.disabled = false;
-          btn.innerText = "Отправить код снова";
-        } else {
-          btn.innerText = `Повтор через ${left}с`;
-        }
-      }, 1000);
-    }
-
-    window.handleResendCode = async function() {
-      if (!pendingRegData) return;
-      pendingRegData.code = String(Math.floor(100000 + Math.random() * 900000));
-      
-      const isEmailConfigured = EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY";
-      if (isEmailConfigured && window.emailjs) {
-        try {
-          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            to_email: pendingRegData.email,
-            user_name: pendingRegData.displayName,
-            verification_code: pendingRegData.code,
-            app_name: "FPVChat"
-          });
-          window.showToast(`Новый код отправлен на ${pendingRegData.email}!`);
-        } catch(e) {
-          window.showToast(`Ошибка отправки. Новый код для теста: ${pendingRegData.code}`);
-        }
-      } else {
-        window.showToast(`Новый код (тестовый режим): ${pendingRegData.code}`);
-      }
-      startResendTimer();
-    };
-
-    window.resetRegOtpStep = function() {
-      if (regResendTimer) clearInterval(regResendTimer);
-      document.getElementById('regStepOtp').style.display = 'none';
-      document.getElementById('regStepFields').style.display = 'block';
-    };
-
-    // Step 2: Verify 6-digit OTP and complete registration
-    window.handleVerifyRegistrationCode = async function() {
-      playTapSound();
-      const otpInput = document.getElementById('regOtpInput');
-      const enteredCode = (otpInput?.value || '').trim();
-
-      if (!pendingRegData) {
-        window.showToast("Данные регистрации устарели, начните заново", true);
-        window.resetRegOtpStep();
-        return;
-      }
-
-      if (!enteredCode || enteredCode.length !== 6) {
-        return window.showToast("Введите 6-значный код из письма!", true);
-      }
-
-      if (enteredCode !== pendingRegData.code) {
-        return window.showToast("Неверный код подтверждения!", true);
-      }
-
-      const btn = document.getElementById('btnVerifyRegCode');
-      if (btn) { btn.disabled = true; btn.innerText = "Создание профиля..."; }
-
-      try {
         const newUser = {
-          username: pendingRegData.username,
-          email: pendingRegData.email,
-          password: pendingRegData.password,
-          displayName: pendingRegData.displayName,
+          username: rawUser,
+          displayName: displayName,
+          password: pass,
           bio: "Пользователь FPVChat",
-          birthYear: pendingRegData.birthYear,
+          birthYear,
           role: 'user',
           isVerified: false,
           isPremium: false,
           stars: 100,
           gifts: [],
-          avatarUrl: `https://placehold.co/100x100/2481cc/ffffff?text=${encodeURIComponent(pendingRegData.displayName.slice(0, 2).toUpperCase())}`,
+          avatarUrl: `https://placehold.co/100x100/2481cc/ffffff?text=${encodeURIComponent(displayName.slice(0, 2).toUpperCase())}`,
           isOnline: true,
           createdAt: Date.now()
         };
 
-        await setDoc(doc(db, 'fpv_users', pendingRegData.username), newUser);
-        pendingRegData = null;
+        await setDoc(userRef, newUser);
         initUserSession(newUser);
-        window.showToast("Почта подтверждена! Добро пожаловать в FPVChat!");
+        window.showToast(`Добро пожаловать, ${displayName}! Аккаунт создан.`);
       } catch(err) {
-        window.showToast("Ошибка создания аккаунта: " + err.message, true);
+        window.showToast("Ошибка регистрации: " + err.message, true);
       } finally {
-        if (btn) { btn.disabled = false; btn.innerText = "Подтвердить и войти"; }
+        if (btn) { btn.disabled = false; btn.innerText = "Зарегистрироваться в FPVChat"; }
+      }
+    };
+
+    // Save Display Name
+    window.saveDisplayNameAction = async function() {
+      const newName = (document.getElementById('displayNameInput')?.value || '').trim();
+      if (!newName) return window.showToast("Имя не может быть пустым!", true);
+      if (!currentUser || !db) return;
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', currentUser.username), { displayName: newName });
+        currentUser.displayName = newName;
+        updateProfileUI();
+        window.closeNameModal();
+        window.showToast("Имя успешно изменено!");
+      } catch(e) {
+        window.showToast("Ошибка сохранения имени: " + e.message, true);
       }
     };
 
@@ -1389,6 +1446,7 @@
       listenIncomingCalls();
       listenDialogs();
       listenVerifRequests();
+      listenSupportNews();
     }
 
     window.handleSignOut = async function() {
@@ -1400,8 +1458,8 @@
       }
       currentUser = null;
       window.safeStorage.removeItem('fpv_logged_user');
+      if (unsubscribeNews) unsubscribeNews();
       document.getElementById('authScreen').style.display = 'flex';
-      window.resetRegOtpStep();
       window.switchAuthTab('login');
     };
 
@@ -1412,7 +1470,6 @@
       
       document.getElementById('settingsDisplayName').innerText = currentUser.displayName || currentUser.username;
       document.getElementById('settingsUsernameTag').innerText = `@${currentUser.username}`;
-      document.getElementById('settingsEmailTag').innerText = currentUser.email || 'Email не указан';
       document.getElementById('settingsBioTag').innerText = `О себе: ${currentUser.bio || 'на связи в FPVChat'}`;
       document.getElementById('settingsAvatarImg').src = currentUser.avatarUrl || 'https://placehold.co/100x100/2481cc/ffffff?text=U';
 
@@ -1424,8 +1481,8 @@
         roleBadge.style.display = (currentUser.role === 'moderator') ? 'inline-block' : 'none';
       }
 
-      // Admin panel button in settings appears ONLY for Owner or Moderator!
-      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL;
+      // Admin panel visibility
+      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME;
       const isMod = currentUser.role === 'moderator';
       const adminBtn = document.getElementById('btnSettingsAdminPanel');
       if (adminBtn) {
@@ -1433,7 +1490,7 @@
         const sub = document.getElementById('settingsAdminSubtitle');
         const title = document.getElementById('settingsAdminBtnTitle');
         if (title) title.innerText = isOwner ? 'Панель Создателя' : 'Панель Модератора';
-        if (sub) sub.innerText = isOwner ? 'Полный доступ (без лимитов)' : 'Урезанная панель (лимиты 500★ и 2 подарка)';
+        if (sub) sub.innerText = isOwner ? 'Полный доступ и публикации' : 'Урезанная панель (лимиты 500★ и 2 подарка)';
       }
 
       // Gifts Render
@@ -1516,6 +1573,129 @@
       }
     };
 
+    // Realtime News Listener for Support Chat & Admin Panel
+    function listenSupportNews() {
+      if (!db) return;
+      if (unsubscribeNews) unsubscribeNews();
+
+      unsubscribeNews = onSnapshot(collection(db, 'fpv_news'), (snap) => {
+        const newsList = [];
+        snap.forEach(d => newsList.push({ id: d.id, ...d.data() }));
+        newsList.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+        renderSupportChatMessages(newsList);
+        renderAdminNewsList(newsList);
+
+        const preview = document.getElementById('supportChatPreviewText');
+        if (preview && newsList.length > 0) {
+          const latest = newsList[newsList.length - 1];
+          preview.innerText = latest.text || 'Официальный информационный канал FPVChat';
+        }
+      }, (err) => console.warn("News sync error:", err));
+    }
+
+    function renderSupportChatMessages(newsList) {
+      const box = document.getElementById('supportMessagesContainer');
+      if (!box) return;
+
+      let html = `
+        <div class="bg-[#17212b] p-3.5 rounded-2xl border border-[#242f3d] text-xs text-slate-300 max-w-[85%] leading-relaxed shadow-md">
+          <div class="flex items-center gap-1.5 text-sky-400 font-bold mb-1">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Официальный канал FPVChat</span>
+          </div>
+          Добро пожаловать в FPVChat! В этот системный канал поступают официальные оповещения, подтверждения безопасности и системные уведомления.
+        </div>
+      `;
+
+      newsList.forEach(n => {
+        const time = new Date(n.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const date = new Date(n.createdAt || Date.now()).toLocaleDateString([], { day: 'numeric', month: 'short' });
+        html += `
+          <div class="bg-[#17212b] p-3.5 rounded-2xl border border-[#2b5278] text-xs text-slate-100 max-w-[88%] leading-relaxed shadow-md space-y-1.5">
+            <div class="flex items-center justify-between text-[11px] text-sky-400 font-semibold border-b border-[#242f3d] pb-1">
+              <div class="flex items-center gap-1.5">
+                <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Официальная новость</span>
+              </div>
+              <span class="text-[10px] text-slate-400">${date}, ${time}</span>
+            </div>
+            <p class="whitespace-pre-wrap break-words text-slate-200 mt-1">${escapeHtml(n.text)}</p>
+          </div>
+        `;
+      });
+
+      box.innerHTML = html;
+      box.scrollTop = box.scrollHeight;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderAdminNewsList(newsList) {
+      const list = document.getElementById('adminPublishedNewsList');
+      if (!list) return;
+
+      if (newsList.length === 0) {
+        list.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">Опубликованных новостей пока нет</div>';
+        return;
+      }
+
+      const reversed = [...newsList].reverse();
+      list.innerHTML = reversed.map(n => `
+        <div class="p-3 bg-[#0e1621] rounded-2xl border border-[#242f3d] space-y-1.5">
+          <div class="flex items-center justify-between text-[10px] text-slate-400">
+            <span>${new Date(n.createdAt || Date.now()).toLocaleString()}</span>
+            <button onclick="window.deleteNewsAction('${n.id}')" class="text-red-400 hover:text-red-300 font-bold text-xs flex items-center gap-0.5">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Удалить</span>
+            </button>
+          </div>
+          <p class="text-xs text-slate-200 whitespace-pre-wrap break-words">${escapeHtml(n.text)}</p>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Publish News to Support Channel (Owner Only)
+    window.publishNewsAction = async function() {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) return window.showToast("Только Создатель может публиковать новости!", true);
+
+      const inp = document.getElementById('adminNewsTextInput');
+      const text = (inp?.value || '').trim();
+      if (!text) return window.showToast("Введите текст новости!", true);
+
+      const btn = document.getElementById('btnPublishNews');
+      if (btn) { btn.disabled = true; btn.innerText = "Публикация..."; }
+
+      try {
+        await addDoc(collection(db, 'fpv_news'), {
+          text: text,
+          author: currentUser.username,
+          createdAt: Date.now()
+        });
+        inp.value = '';
+        window.showToast("Новость успешно опубликована в Службе поддержки!");
+      } catch(e) {
+        window.showToast("Ошибка публикации: " + e.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Опубликовать новость"; }
+      }
+    };
+
+    // Delete News from Support Channel (Owner Only)
+    window.deleteNewsAction = async function(newsId) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) return window.showToast("Только Создатель может удалять новости!", true);
+
+      try {
+        await deleteDoc(doc(db, 'fpv_news', newsId));
+        window.showToast("Новость удалена");
+      } catch(e) {
+        window.showToast("Ошибка удаления: " + e.message, true);
+      }
+    };
+
     // Central Users Realtime Listener
     function listenAllUsers() {
       if (!db) return;
@@ -1560,7 +1740,7 @@
                 ${u.isPremium ? '<span class="px-1 text-[9px] rounded bg-amber-500 text-black font-bold">★</span>' : ''}
                 ${u.role === 'moderator' ? '<span class="px-1 text-[8px] rounded bg-emerald-500/20 text-emerald-400 font-bold">МОД</span>' : ''}
               </div>
-              <span class="text-[10px] text-slate-400">@${escapeHtml(u.username)} • ${escapeHtml(u.email || '')}</span>
+              <span class="text-[10px] text-slate-400">@${escapeHtml(u.username)}</span>
             </div>
           </div>
           <button class="p-2 text-slate-400 hover:text-white rounded-full">
@@ -1572,7 +1752,7 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Telegram-style Stories & Online Circle Carousel
+    // Stories Carousel
     function renderQuickUsersCarousel() {
       const carousel = document.getElementById('quickUsersCarousel');
       if (!carousel || !currentUser) return;
@@ -1614,7 +1794,6 @@
       if (query) {
         filtered = filtered.filter(u => 
           (u.username || '').toLowerCase().includes(query) || 
-          (u.email || '').toLowerCase().includes(query) || 
           (u.displayName || '').toLowerCase().includes(query)
         );
       }
@@ -1637,7 +1816,7 @@
                 ${u.isVerified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>' : ''}
                 ${u.isPremium ? '<span class="px-1 text-[9px] rounded bg-amber-500 text-black font-bold">★</span>' : ''}
               </div>
-              <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(u.username)} • ${escapeHtml(u.email || '')}</span>
+              <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(u.username)}</span>
             </div>
           </div>
           <button class="px-3 py-1.5 rounded-xl bg-[#2481cc] hover:bg-[#50b5ff] text-white text-xs font-semibold flex items-center gap-1 shadow">
@@ -1882,7 +2061,7 @@
       }, (err) => console.warn("Dialogs sync error:", err));
     }
 
-    // WebRTC Calls Implementation
+    // WebRTC Calls Implementation with Camera Flip Support
     const rtcConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -1893,10 +2072,11 @@
     window.startCall = async function(type = 'audio') {
       if (!currentUser || !currentPeer) return;
       playTapSound();
+      currentFacingMode = 'user';
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
-          video: (type === 'video')
+          video: (type === 'video') ? { facingMode: currentFacingMode } : false
         });
 
         const isVideo = (type === 'video');
@@ -1905,6 +2085,9 @@
         document.getElementById('localVideo').srcObject = localStream;
         document.getElementById('callPeerName').innerText = currentPeer.displayName || currentPeer.username;
         document.getElementById('callPeerInitial').innerText = (currentPeer.displayName || currentPeer.username).charAt(0).toUpperCase();
+
+        const btnFlip = document.getElementById('btnFlipCamera');
+        if (btnFlip) btnFlip.style.display = isVideo ? 'flex' : 'none';
 
         window.setModalVisible('callOverlay', true);
 
@@ -1993,11 +2176,12 @@
       const call = incomingCallData;
       activeCallRoomId = call.id;
       window.setModalVisible('incomingCallModal', false);
+      currentFacingMode = 'user';
 
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
-          video: (call.type === 'video')
+          video: (call.type === 'video') ? { facingMode: currentFacingMode } : false
         });
 
         const isVideo = (call.type === 'video');
@@ -2006,6 +2190,9 @@
         document.getElementById('localVideo').srcObject = localStream;
         document.getElementById('callPeerName').innerText = call.caller;
         document.getElementById('callPeerInitial').innerText = call.caller.charAt(0).toUpperCase();
+
+        const btnFlip = document.getElementById('btnFlipCamera');
+        if (btnFlip) btnFlip.style.display = isVideo ? 'flex' : 'none';
 
         window.setModalVisible('callOverlay', true);
 
@@ -2102,11 +2289,56 @@
       }
     };
 
-    // Admin Panel Logic with Moderator limits
+    // Flip Camera (Front <-> Back Switch)
+    window.flipCallCamera = async function() {
+      if (!localStream) return;
+      playTapSound();
+      currentFacingMode = (currentFacingMode === 'user' ? 'environment' : 'user');
+
+      try {
+        let newStream = null;
+        try {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: currentFacingMode } }
+          });
+        } catch(e) {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode }
+          });
+        }
+
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        if (!newVideoTrack) return;
+
+        if (peerConnection) {
+          const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+          if (sender) {
+            await sender.replaceTrack(newVideoTrack);
+          }
+        }
+
+        const oldVideoTrack = localStream.getVideoTracks()[0];
+        if (oldVideoTrack) {
+          oldVideoTrack.stop();
+          localStream.removeTrack(oldVideoTrack);
+        }
+        localStream.addTrack(newVideoTrack);
+
+        const localVid = document.getElementById('localVideo');
+        if (localVid) localVid.srcObject = localStream;
+
+        window.showToast(currentFacingMode === 'environment' ? 'Основная камера включена' : 'Фронтальная камера включена');
+      } catch(err) {
+        console.warn("Flip camera error:", err);
+        window.showToast("Не удалось переключить камеру: " + err.message, true);
+      }
+    };
+
+    // Admin Panel Logic with Moderator limits & News section
     window.openAdminPanel = async function() {
       if (!currentUser) return;
       playTapSound();
-      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL;
+      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME;
       const isMod = currentUser.role === 'moderator';
 
       if (!isOwner && !isMod) {
@@ -2131,6 +2363,7 @@
       document.getElementById('btnAdminGiveVerif').style.display = isOwner ? 'block' : 'none';
       document.getElementById('btnAdminGivePremium').style.display = isOwner ? 'block' : 'none';
 
+      document.getElementById('tabAdminNews').style.display = isOwner ? 'flex' : 'none';
       document.getElementById('tabAdminBans').style.display = isOwner ? 'flex' : 'none';
       document.getElementById('tabAdminRequests').style.display = isOwner ? 'flex' : 'none';
 
@@ -2189,13 +2422,13 @@
 
     window.switchAdminTab = function(tab) {
       playTapSound();
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
-      if (!isOwner && (tab === 'bans' || tab === 'requests')) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner && (tab === 'bans' || tab === 'requests' || tab === 'news')) {
         window.showToast("Этот раздел доступен только Создателю!", true);
         tab = 'actions';
       }
 
-      ['actions', 'requests', 'bans'].forEach(t => {
+      ['actions', 'news', 'requests', 'bans'].forEach(t => {
         const tabBtn = document.getElementById(`tabAdmin${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const tabContent = document.getElementById(`adminContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
         if (tabBtn) {
@@ -2216,7 +2449,7 @@
       const directCards = document.getElementById('adminDirectUserCards');
       if (!select) return;
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
 
       if (allUsersList.length === 0) {
         select.innerHTML = '<option value="">Нет зарегистрированных пользователей</option>';
@@ -2255,10 +2488,15 @@
             `;
           }
           return `
-            <div class="p-2 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between">
+            <div class="p-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between">
               <div class="min-w-0 mr-2">
-                <span class="text-xs font-bold text-white block truncate">@${escapeHtml(u.username)}</span>
-                <span class="text-[10px] text-slate-400 block truncate">Звёзды: ${u.stars || 0} | ${u.isVerified ? 'Галочка' : 'Обычный'} ${u.role === 'moderator' ? '| МОД' : ''}</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-white truncate">${escapeHtml(u.displayName || u.username)}</span>
+                  <span class="text-[10px] text-sky-400 font-mono">(@${escapeHtml(u.username)})</span>
+                  ${u.role === 'owner' ? '<span class="text-[8px] px-1 rounded bg-amber-500/20 text-amber-300 font-bold">ВЛАДЕЛЕЦ</span>' : ''}
+                  ${u.role === 'moderator' ? '<span class="text-[8px] px-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">МОД</span>' : ''}
+                </div>
+                <span class="text-[10px] text-slate-400 block truncate mt-0.5">Баланс: ${u.stars || 0}★ | Статус: ${u.isVerified ? 'Верифицирован' : 'Обычный'} | Рожд: ${u.birthYear || '—'}</span>
               </div>
               <div class="flex items-center gap-1 shrink-0">
                 ${buttonsHtml}
@@ -2292,7 +2530,7 @@
       const target = document.getElementById('adminTargetUser').value;
       if (!target) return window.showToast("Выберите пользователя из списка!", true);
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
 
       if (!isOwner) {
         const used = modDailyUsage.starsGiven || 0;
@@ -2319,7 +2557,7 @@
     };
 
     window.adminGiveVerification = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Модераторы не могут выдавать галочки!", true);
       }
@@ -2336,7 +2574,7 @@
     };
 
     window.adminGivePremium = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Модераторы не могут выдавать Premium!", true);
       }
@@ -2353,7 +2591,7 @@
     };
 
     window.adminAssignModerator = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Только Создатель может назначать модераторов!", true);
       }
@@ -2375,7 +2613,7 @@
       const note = document.getElementById('adminGiftsTypeNote');
       if (!box) return;
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (note) {
         note.innerText = isOwner ? 'Все подарки (безлимит)' : 'До 2 недорогих подарков в день (<=150★)';
       }
@@ -2396,7 +2634,7 @@
       const target = document.getElementById('adminTargetUser').value;
       if (!target) return window.showToast("Выберите пользователя из списка!", true);
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       const gift = GIFTS_CATALOG.find(x => x.id === giftId);
 
       if (!isOwner) {
@@ -2428,7 +2666,7 @@
 
     // Bans Implementation (OWNER ONLY)
     window.banUserAction = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Модераторы не имеют права блокировать пользователей!", true);
       }
@@ -2453,7 +2691,7 @@
     };
 
     window.unbanUserAction = async function(target) {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Модераторы не имеют права разблокировать пользователей!", true);
       }
@@ -2567,7 +2805,7 @@
     }
 
     window.adminApproveVerification = async function(targetUsername) {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Только Создатель может одобрять запросы на галочку!", true);
       }
@@ -2581,7 +2819,7 @@
     };
 
     window.adminRejectVerification = async function(targetUsername) {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
         return window.showToast("Только Создатель может отклонять запросы!", true);
       }
@@ -2657,31 +2895,12 @@
       }
     };
 
-    // Avatar Customization
-    window.openAvatarModal = function() {
-      playTapSound();
-      document.getElementById('avatarUrlInput').value = '';
-      window.setModalVisible('avatarModal', true);
-    };
-
-    window.saveAvatarAction = async function() {
-      const url = document.getElementById('avatarUrlInput').value.trim();
-      if (!url || !currentUser) return;
-
-      try {
-        await updateDoc(doc(db, 'fpv_users', currentUser.username), { avatarUrl: url });
-        window.closeAvatarModal();
-        window.showToast("Аватарка обновлена!");
-      } catch(e) {
-        window.showToast("Ошибка: " + e.message, true);
-      }
-    };
-
-    // Auto-login from saved session
+    // Auto-login from saved local session
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
+
       const savedUser = window.safeStorage.getItem('fpv_logged_user');
-      if (savedUser && db) {
+      if (savedUser && db && !currentUser) {
         try {
           const snap = await getDoc(doc(db, 'fpv_users', savedUser));
           if (snap.exists() && !snap.data().isBanned) {
