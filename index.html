@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FPVChat Messenger</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    
+    input, textarea, select {
+      user-select: text;
+    }
+
+    body {
+      background-color: #0e1621;
+      color: #f5f5f5;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #242f3d;
+      border-radius: 4px;
+    }
+
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .calling-pulse {
+      animation: pulse-ring 2s infinite ease-in-out;
+    }
+
+    .active-nav-tab {
+      color: #2481cc !important;
+    }
+  </style>
+</head>
+<body class="bg-[#0e1621] text-slate-100 flex flex-col h-full w-full select-none">
+
+  <!-- Toast Notification Box -->
+  <div id="toastNotification" style="display: none;" class="fixed top-5 left-1/2 -translate-x-1/2 z-[250] max-w-[92%] px-4 py-2.5 rounded-2xl bg-[#17212b]/95 border border-[#2b5278] text-white text-xs font-medium shadow-2xl flex items-center gap-2 transition-all duration-300">
+    <i id="toastIcon" data-lucide="info" class="w-4 h-4 text-[#2481cc] shrink-0"></i>
+    <span id="toastText" class="truncate">Уведомление</span>
+  </div>
+
+  <!-- Master Admin Password Modal -->
+  <div id="adminPasswordModal" style="display: none;" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
+        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-base font-bold text-white mb-1">Вход Администратора</h3>
+      <p class="text-xs text-slate-400 mb-4">Вы входите под аккаунтом Создателя. Введите пароль владельца.</p>
+      
+      <input type="password" id="adminMasterPasswordInput" onkeydown="if(event.key==='Enter') window.submitAdminPassword()" placeholder="Введите пароль..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] mb-4">
+      
+      <div class="flex gap-2">
+        <button onclick="window.closeAdminPasswordModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">Отмена</button>
+        <button onclick="window.submitAdminPassword()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] hover:bg-[#1f70b0] text-xs font-semibold text-white shadow-lg transition">Войти</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Banned Account Modal -->
+  <div id="bannedModal" style="display: none;" class="fixed inset-0 z-[150] bg-black/90 backdrop-blur-md flex items-center justify-center p-6">
+    <div class="bg-[#17212b] border border-red-500/40 w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl">
+      <div class="w-16 h-16 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+        <i data-lucide="ban" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white mb-1">Аккаунт заблокирован</h3>
+      <p class="text-xs text-slate-400 mb-4">Администрация ограничила доступ к вашему профилю в FPVChat.</p>
+      
+      <div class="bg-[#0e1621] p-3.5 rounded-2xl border border-red-500/20 text-left mb-5">
+        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">Причина блокировки:</span>
+        <p id="bannedReasonText" class="text-xs font-semibold text-red-300 break-words">Нарушение правил сообщества</p>
+      </div>
+      
+      <button onclick="window.closeBannedModalAndExit()" class="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition">
+        Выйти на экран входа
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Auth Screen (Login / Register) -->
+  <div id="authScreen" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col justify-between p-6">
+    <div class="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center">
+      <div class="text-center mb-8">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#2481cc] to-sky-400 mx-auto flex items-center justify-center shadow-2xl shadow-sky-500/20 mb-4">
+          <i data-lucide="send" class="w-10 h-10 text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">FPVChat</h1>
+        <p class="text-xs text-slate-400 mt-1">Быстрый мессенджер для друзей</p>
+      </div>
+
+      <!-- Segment Tabs -->
+      <div class="flex bg-[#17212b] p-1 rounded-2xl mb-5 border border-[#242f3d]">
+        <button id="tabBtnLogin" onclick="window.switchAuthTab('login')" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#2481cc] text-white shadow transition">Вход</button>
+        <button id="tabBtnRegister" onclick="window.switchAuthTab('register')" class="flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 transition">Регистрация</button>
+      </div>
+
+      <!-- Login View -->
+      <div id="viewLogin" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Ваш никнейм</label>
+          <input type="text" id="loginUsername" onkeydown="if(event.key==='Enter') window.handleLoginSubmit()" placeholder="Например: alex" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] transition">
+        </div>
+        <button onclick="window.handleLoginSubmit()" id="btnLoginSubmit" class="w-full py-3.5 rounded-2xl bg-[#2481cc] hover:bg-[#1f70b0] active:scale-98 text-white font-semibold text-sm shadow-xl shadow-sky-500/20 transition flex items-center justify-center gap-2">
+          <span>Продолжить</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Register View -->
+      <div id="viewRegister" style="display: none;" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Придумайте никнейм</label>
+          <input type="text" id="regUsername" placeholder="Только буквы и цифры" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] transition">
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Год рождения</label>
+          <input type="number" id="regBirthYear" onkeydown="if(event.key==='Enter') window.handleRegisterSubmit()" placeholder="Например: 2005" min="1940" max="2026" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] transition">
+        </div>
+        <button onclick="window.handleRegisterSubmit()" id="btnRegisterSubmit" class="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white font-semibold text-sm shadow-xl shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+          <span>Зарегистрироваться</span>
+          <i data-lucide="check" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="text-center text-[11px] text-slate-600 pb-2 safe-bottom">
+      FPVChat Mobile Edition
+    </div>
+  </div>
+
+  <!-- Incoming Call Modal -->
+  <div id="incomingCallModal" style="display: none;" class="fixed inset-0 z-[160] bg-black/90 backdrop-blur-md flex flex-col items-center justify-between p-8">
+    <div class="text-center mt-12">
+      <div class="w-24 h-24 rounded-full bg-[#2481cc]/20 border-2 border-[#2481cc] flex items-center justify-center mx-auto mb-4 calling-pulse">
+        <i data-lucide="phone-call" class="w-10 h-10 text-sky-400"></i>
+      </div>
+      <h3 id="incomingCallerName" class="text-xl font-bold text-white">Входящий вызов...</h3>
+      <p id="incomingCallTypeLabel" class="text-xs text-sky-400 mt-1 font-medium">Аудиовызов FPVChat</p>
+    </div>
+
+    <div class="flex items-center gap-12 mb-8">
+      <button onclick="window.rejectIncomingCall()" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center text-white shadow-2xl active:scale-90 transition">
+        <i data-lucide="phone-off" class="w-7 h-7"></i>
+      </button>
+      <button onclick="window.acceptIncomingCall()" class="w-16 h-16 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-white shadow-2xl active:scale-90 transition">
+        <i data-lucide="phone" class="w-7 h-7"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Active Call Overlay -->
+  <div id="callOverlay" style="display: none;" class="fixed inset-0 z-[140] bg-[#0e1621] flex flex-col justify-between p-4">
+    <header class="flex items-center justify-between safe-top pt-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-[#2481cc]/20 flex items-center justify-center text-sky-400">
+          <i data-lucide="phone" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 id="callPeerName" class="text-sm font-bold text-white">Собеседник</h4>
+          <span id="callTimerLabel" class="text-[11px] text-emerald-400 font-mono">Соединение...</span>
+        </div>
+      </div>
+      <button onclick="window.minimizeCall()" class="p-2 text-slate-400 hover:text-white rounded-full">
+        <i data-lucide="minimize-2" class="w-5 h-5"></i>
+      </button>
+    </header>
+
+    <div class="flex-1 relative my-4 rounded-3xl overflow-hidden bg-black/60 flex items-center justify-center border border-[#242f3d]">
+      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+      <div id="callAudioAvatar" class="flex flex-col items-center">
+        <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-2xl mb-3">
+          <span id="callPeerInitial">?</span>
+        </div>
+        <p class="text-xs text-slate-400">Аудиовызов защищен WebRTC</p>
+      </div>
+
+      <video id="localVideo" autoplay playsinline muted style="display: none;" class="absolute bottom-4 right-4 w-28 h-40 object-cover rounded-2xl border-2 border-[#2481cc] shadow-2xl bg-black"></video>
+    </div>
+
+    <div class="flex items-center justify-center gap-6 pb-6 safe-bottom">
+      <button id="btnToggleMic" onclick="window.toggleCallMic()" class="w-14 h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-white flex items-center justify-center shadow-lg transition">
+        <i id="iconMic" data-lucide="mic" class="w-6 h-6"></i>
+      </button>
+      <button onclick="window.endActiveCall()" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-xl active:scale-95 transition">
+        <i data-lucide="phone-off" class="w-7 h-7"></i>
+      </button>
+      <button id="btnToggleVideo" onclick="window.toggleCallVideo()" class="w-14 h-14 rounded-full bg-[#17212b] hover:bg-[#242f3d] text-white flex items-center justify-center shadow-lg transition">
+        <i id="iconCam" data-lucide="video" class="w-6 h-6"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Application Wrapper -->
+  <div id="mainApp" class="flex-1 flex flex-col h-full w-full overflow-hidden">
+    <!-- Top Header -->
+    <header class="h-14 bg-[#17212b] px-4 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-3">
+        <h1 id="screenHeaderTitle" class="text-base font-bold text-white">Чаты</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.openShopModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold hover:bg-amber-500/20 transition">
+          <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
+          <span id="headerStarsCount">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Screens Viewport -->
+    <main class="flex-1 overflow-y-auto relative bg-[#0e1621]">
+      <!-- 1. Screen: Contacts -->
+      <section id="screenContacts" style="display: none;" class="p-3 space-y-2">
+        <div class="flex items-center justify-between px-2 py-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Контакты FPVChat</span>
+          <span id="contactsCounterBadge" class="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full font-semibold">0 пользователей</span>
+        </div>
+        <div id="contactsListContainer" class="space-y-1.5">
+          <div class="text-center py-10 text-xs text-slate-500">Загрузка контактов...</div>
+        </div>
+      </section>
+
+      <!-- 2. Screen: Calls -->
+      <section id="screenCalls" style="display: none;" class="p-3 space-y-3">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-2 py-1">История звонков</div>
+        <div id="callsHistoryContainer" class="space-y-1">
+          <div class="p-6 text-center rounded-2xl bg-[#17212b] border border-[#242f3d]">
+            <i data-lucide="phone-call" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+            <p class="text-xs text-slate-400">Звонков пока не было</p>
+            <p class="text-[10px] text-slate-500 mt-1">Откройте любой контакт или чат, чтобы совершить аудио- или видеозвонок</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Screen: Chats -->
+      <section id="screenChats" class="flex flex-col min-h-full">
+        <!-- Direct Quick Actions Bar in Chats Tab -->
+        <div class="p-3 bg-[#17212b] border-b border-[#242f3d] space-y-2.5 shrink-0">
+          <div class="flex items-center gap-2">
+            <button onclick="window.openNewChatModal()" class="flex-1 py-2.5 px-3.5 bg-[#2481cc] hover:bg-[#1f70b0] active:scale-98 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>+ Начать новый чат</span>
+            </button>
+            <button onclick="window.openNewChatModal()" class="p-2.5 bg-[#0e1621] hover:bg-[#242f3d] rounded-xl border border-[#242f3d] text-slate-300 transition" title="Найти контакт">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Quick Horizontal Contacts Carousel -->
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+              <span>Быстрый диалог:</span>
+              <span class="text-sky-400 cursor-pointer" onclick="window.openNewChatModal()">Все контакты →</span>
+            </div>
+            <div id="quickUsersCarousel" class="flex gap-2 overflow-x-auto py-1">
+              <div class="text-[11px] text-slate-500 py-1">Загрузка участников...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat List Items -->
+        <div class="divide-y divide-[#17212b] flex-1">
+          <!-- Support Chat (Pinned) -->
+          <div onclick="window.openSupportChat()" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/50 cursor-pointer transition">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-[#2481cc] to-sky-400 flex items-center justify-center text-white shrink-0 shadow">
+              <i data-lucide="headset" class="w-6 h-6"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-0.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-white truncate">Служба поддержки</span>
+                  <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400 shrink-0"></i>
+                </div>
+                <span class="text-[10px] text-slate-500 font-medium">Сервис</span>
+              </div>
+              <p class="text-xs text-slate-400 truncate">Официальный информационный канал</p>
+            </div>
+          </div>
+
+          <!-- Dynamic Active Chats List -->
+          <div id="dynamicChatsList" class="divide-y divide-[#17212b]">
+            <div class="p-8 text-center space-y-3">
+              <p class="text-xs text-slate-500">У вас пока нет активных диалогов</p>
+              <button onclick="window.openNewChatModal()" class="px-4 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl">
+                Выбрать контакт для общения
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAB: Floating New Chat Button -->
+      <button onclick="window.openNewChatModal()" class="fixed bottom-20 right-5 w-14 h-14 rounded-full bg-[#2481cc] hover:bg-[#1f70b0] active:scale-95 text-white shadow-2xl flex items-center justify-center z-40 transition-transform">
+        <i data-lucide="edit-3" class="w-6 h-6"></i>
+      </button>
+
+      <!-- 4. Screen: Settings -->
+      <section id="screenSettings" style="display: none;" class="pb-24">
+        <!-- Profile Card -->
+        <div class="bg-[#17212b] p-4 border-b border-[#242f3d] flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3.5">
+            <div onclick="window.openAvatarModal()" class="relative cursor-pointer">
+              <img id="settingsAvatarImg" src="https://placehold.co/100x100/2481cc/ffffff?text=FPV" class="w-16 h-16 rounded-full object-cover border-2 border-[#2481cc]">
+              <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-white text-[10px] shadow">
+                <i data-lucide="camera" class="w-3 h-3"></i>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h3 id="settingsDisplayName" class="text-sm font-bold text-white">Имя</h3>
+                <span id="settingsVerifBadge" style="display: none;">
+                  <i data-lucide="badge-check" class="w-4 h-4 text-sky-400 fill-sky-400"></i>
+                </span>
+                <span id="settingsPremiumBadge" style="display: none;" class="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-[9px] font-bold text-white">★</span>
+                <span id="settingsRoleBadge" style="display: none;" class="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">МОДЕРАТОР</span>
+              </div>
+              <span id="settingsUsernameTag" class="text-xs text-slate-400 block">@username</span>
+              <span id="settingsBirthYearTag" class="text-[10px] text-slate-500 block">Год: 2000</span>
+            </div>
+          </div>
+          <button onclick="window.handleSignOut()" class="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition" title="Выйти">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Gifts Showcase Card -->
+        <div class="px-3 mb-3">
+          <div class="bg-[#17212b] rounded-2xl p-3 border border-[#242f3d]">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="gift" class="w-3.5 h-3.5 text-pink-400"></i> Подарки профиля
+              </span>
+              <button onclick="window.openShopModal()" class="text-[11px] text-sky-400 font-semibold hover:underline">Магазин</button>
+            </div>
+            <div id="profileGiftsContainer" class="flex gap-2 overflow-x-auto py-1">
+              <div class="text-[11px] text-slate-500 py-1">Подарков пока нет</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Action Links -->
+        <div class="px-3 space-y-3 pb-8">
+          <div class="bg-[#17212b] rounded-2xl border border-[#242f3d] divide-y divide-[#242f3d]/60 overflow-hidden">
+            <button onclick="window.requestVerification()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                  <i data-lucide="badge-check" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-semibold text-white block">Запрос на галочку</span>
+                  <span class="text-[10px] text-slate-400 block">Получить официальный значок верификации</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+
+            <!-- Admin Panel Button: STRICTLY HIDDEN UNTIL OWNER OR MODERATOR -->
+            <button id="btnSettingsAdminPanel" onclick="window.openAdminPanel()" style="display: none;" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <i data-lucide="shield" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span id="settingsAdminBtnTitle" class="text-xs font-semibold text-white block">Панель управления</span>
+                  <span id="settingsAdminSubtitle" class="text-[10px] text-slate-400 block">Управление и награды</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+          </div>
+
+          <div class="bg-[#17212b] rounded-2xl border border-[#242f3d] divide-y divide-[#242f3d]/60 overflow-hidden">
+            <button onclick="window.openSettingsSubpage('notifications')" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                  <i data-lucide="bell" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-medium text-white block">Уведомления и звуки</span>
+                  <span class="text-[10px] text-slate-400 block">Включены</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+
+            <button onclick="window.openSettingsSubpage('privacy')" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <i data-lucide="lock" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-medium text-white block">Конфиденциальность</span>
+                  <span class="text-[10px] text-slate-400 block">Последняя активность, звонки</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+
+            <button onclick="window.openSettingsSubpage('storage')" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                  <i data-lucide="database" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-medium text-white block">Данные и память</span>
+                  <span class="text-[10px] text-slate-400 block">Кэш медиа и диалогов</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="h-14 bg-[#17212b] border-t border-[#242f3d] flex items-center justify-around shrink-0 safe-bottom">
+      <button onclick="window.switchMainTab('contacts')" id="navTabContacts" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition w-16">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Контакты</span>
+      </button>
+      <button onclick="window.switchMainTab('calls')" id="navTabCalls" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition w-16">
+        <i data-lucide="phone" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Звонки</span>
+      </button>
+      <button onclick="window.switchMainTab('chats')" id="navTabChats" class="flex flex-col items-center gap-0.5 active-nav-tab transition w-16">
+        <i data-lucide="message-circle" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Чаты</span>
+      </button>
+      <button onclick="window.switchMainTab('settings')" id="navTabSettings" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition w-16">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Настройки</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 1-on-1 Direct Chat Room -->
+  <div id="directChatRoom" style="display: none;" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-3.5 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-2.5">
+        <button onclick="window.closeDirectChat()" class="p-1 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <img id="directPeerAvatar" src="https://placehold.co/80x80/2481cc/ffffff?text=U" class="w-9 h-9 rounded-full object-cover">
+        <div>
+          <div class="flex items-center gap-1">
+            <span id="directPeerName" class="text-xs font-bold text-white truncate max-w-[120px]">Собеседник</span>
+            <span id="directPeerBadge" style="display: none;">
+              <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>
+            </span>
+          </div>
+          <span id="directPeerStatus" class="text-[10px] text-slate-400 block">в сети</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.startCall('audio')" class="p-2 text-slate-400 hover:text-white rounded-full" title="Аудиозвонок">
+          <i data-lucide="phone" class="w-4 h-4"></i>
+        </button>
+        <button onclick="window.startCall('video')" class="p-2 text-slate-400 hover:text-white rounded-full" title="Видеозвонок">
+          <i data-lucide="video" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <div id="directMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <div class="text-center py-10 text-xs text-slate-500">Начните диалог первым...</div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="p-2.5 bg-[#17212b] border-t border-[#242f3d] flex items-center gap-2 safe-bottom">
+      <label class="p-2 text-slate-400 hover:text-white rounded-full cursor-pointer">
+        <i data-lucide="paperclip" class="w-5 h-5"></i>
+        <input type="file" id="directFileInput" onchange="window.handleDirectFileUpload(event)" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.zip">
+      </label>
+      <input type="text" id="directMessageInput" onkeydown="if(event.key==='Enter') window.sendDirectMessage()" placeholder="Сообщение..." class="flex-1 bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+      <button onclick="window.sendDirectMessage()" class="w-10 h-10 rounded-full bg-[#2481cc] hover:bg-[#1f70b0] text-white flex items-center justify-center shrink-0 shadow">
+        <i data-lucide="send" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- System Support Chat -->
+  <div id="supportChatRoom" style="display: none;" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-3.5 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-2.5">
+        <button onclick="window.closeSupportChat()" class="p-1 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#2481cc] to-sky-400 flex items-center justify-center text-white">
+          <i data-lucide="headset" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs font-bold text-white">Служба поддержки</span>
+            <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>
+          </div>
+          <span class="text-[10px] text-sky-400 block">официальный сервис</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="supportMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <div class="bg-[#17212b] p-3.5 rounded-2xl border border-[#242f3d] text-xs text-slate-300 max-w-[85%] leading-relaxed shadow-md">
+        Добро пожаловать в FPVChat! В этот системный канал поступают официальные оповещения, подтверждения безопасности и системные уведомления.
+      </div>
+    </div>
+
+    <div class="p-3 bg-[#17212b] border-t border-[#242f3d] text-center text-xs text-slate-500 safe-bottom">
+      В этот чат нельзя отправлять сообщения
+    </div>
+  </div>
+
+  <!-- Admin Panel Modal -->
+  <div id="adminPanelModal" style="display: none;" class="fixed inset-0 z-[80] bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-4 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
+          <i data-lucide="shield" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 id="adminPanelTitle" class="text-xs font-bold text-white">Панель Управления</h3>
+          <span id="adminPanelSubtitle" class="text-[10px] text-amber-400/80 block">Управление пользователями</span>
+        </div>
+      </div>
+      <button onclick="window.closeAdminPanel()" class="p-1.5 text-slate-400 hover:text-white rounded-full">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </header>
+
+    <!-- Moderator Daily Limit Banner -->
+    <div id="modLimitBanner" style="display: none;" class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-[11px] text-amber-300">
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Лимиты на сегодня:</span>
+      </div>
+      <div class="font-bold flex items-center gap-3">
+        <span id="modStarsLimitLabel">★ 500/500</span>
+        <span id="modGiftsLimitLabel">🎁 2/2</span>
+      </div>
+    </div>
+
+    <!-- Admin Tabs -->
+    <div class="flex bg-[#17212b] p-1 mx-3 my-2 rounded-xl text-xs border border-[#242f3d]">
+      <button id="tabAdminActions" onclick="window.switchAdminTab('actions')" class="flex-1 py-1.5 rounded-lg bg-[#2481cc] text-white font-medium transition">
+        Выдача наград
+      </button>
+      <button id="tabAdminRequests" onclick="window.switchAdminTab('requests')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium flex items-center justify-center gap-1 transition">
+        <span>Запросы галочки</span>
+        <span id="badgeReqCount" style="display: none;" class="bg-sky-500 text-white rounded-full px-1.5 py-0.2 text-[9px] font-bold">0</span>
+      </button>
+      <button id="tabAdminBans" onclick="window.switchAdminTab('bans')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium flex items-center justify-center gap-1 transition">
+        <span>Блокировки</span>
+        <span id="badgeBansCount" style="display: none;" class="bg-red-500 text-white rounded-full px-1.5 py-0.2 text-[9px] font-bold">0</span>
+      </button>
+    </div>
+
+    <!-- Admin Content: Actions (Awards) -->
+    <div id="adminContentActions" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
+      <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-[11px] font-semibold text-slate-300">Выберите целевого пользователя:</label>
+          <span id="adminSelectedUserLabel" class="text-[11px] font-bold text-sky-400">@...</span>
+        </div>
+        <select id="adminTargetUser" onchange="window.handleAdminUserSelectChange()" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+          <option value="">Загрузка пользователей...</option>
+        </select>
+      </div>
+
+      <!-- Quick Actions Grid -->
+      <div class="grid grid-cols-2 gap-2">
+        <button id="btnAdminGiveStars" onclick="window.adminGiveStars(500)" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
+          <i data-lucide="star" class="w-5 h-5 text-amber-400 fill-amber-400 mb-1"></i>
+          <span class="text-xs font-bold text-white block">+500 Звёзд</span>
+          <span class="text-[10px] text-slate-400 block" id="btnAdminGiveStarsDesc">Пополнить баланс</span>
+        </button>
+
+        <!-- Hidden for Moderators -->
+        <button id="btnAdminGiveVerif" onclick="window.adminGiveVerification()" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
+          <i data-lucide="badge-check" class="w-5 h-5 text-sky-400 fill-sky-400 mb-1"></i>
+          <span class="text-xs font-bold text-white block">Выдать галочку</span>
+          <span class="text-[10px] text-slate-400 block">Верифицировать</span>
+        </button>
+
+        <!-- Hidden for Moderators -->
+        <button id="btnAdminGivePremium" onclick="window.adminGivePremium()" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
+          <i data-lucide="sparkles" class="w-5 h-5 text-rose-400 mb-1"></i>
+          <span class="text-xs font-bold text-white block">Выдать Premium</span>
+          <span class="text-[10px] text-slate-400 block">Премиум статус</span>
+        </button>
+
+        <!-- Hidden for Moderators -->
+        <button id="btnAssignMod" onclick="window.adminAssignModerator()" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
+          <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 mb-1"></i>
+          <span class="text-xs font-bold text-white block">Назначить модератором</span>
+          <span class="text-[10px] text-slate-400 block">Права модерации</span>
+        </button>
+      </div>
+
+      <!-- Quick User Action Cards List -->
+      <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
+        <span class="text-xs font-bold text-white block">Быстрые действия с участниками:</span>
+        <div id="adminDirectUserCards" class="space-y-1.5 max-h-48 overflow-y-auto">
+          <div class="text-[11px] text-slate-500 py-2 text-center">Загрузка списка...</div>
+        </div>
+      </div>
+
+      <!-- Send Gifts Panel -->
+      <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d]">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-white block">Отправить подарок:</span>
+          <span id="adminGiftsTypeNote" class="text-[10px] text-slate-400">Все подарки</span>
+        </div>
+        <div id="adminGiftsSelector" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
+      </div>
+    </div>
+
+    <!-- Admin Content: Verification Requests (Owner Only) -->
+    <div id="adminContentRequests" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-2 pb-8">
+      <div class="p-2.5 bg-[#17212b] rounded-2xl border border-[#242f3d] text-xs text-slate-300">
+        Заявки пользователей на получение официального значка верификации.
+      </div>
+      <div id="verifRequestsList" class="space-y-2">
+        <div class="text-center py-10 text-xs text-slate-500">Запросов на галочку нет</div>
+      </div>
+    </div>
+
+    <!-- Admin Content: Bans (Owner Only) -->
+    <div id="adminContentBans" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
+      <div class="p-3.5 bg-[#17212b] rounded-2xl border border-red-500/30 space-y-2.5">
+        <h4 class="text-xs font-bold text-red-400 flex items-center gap-1.5">
+          <i data-lucide="user-x" class="w-4 h-4"></i> Заблокировать пользователя
+        </h4>
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Пользователь:</label>
+          <select id="adminBanTargetUser" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500">
+            <option value="">Выберите аккаунт...</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Причина бана:</label>
+          <input type="text" id="adminBanReasonInput" placeholder="Спам, оскорбления..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500">
+        </div>
+        <button onclick="window.banUserAction()" class="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 active:scale-98">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i> Забанить пользователя
+        </button>
+      </div>
+
+      <div>
+        <h4 class="text-xs font-semibold text-slate-300 mb-2 px-1 flex items-center gap-1.5">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-slate-400"></i> Список заблокированных
+        </h4>
+        <div id="bannedUsersList" class="space-y-2">
+          <div class="text-center py-6 text-xs text-slate-500">Заблокированных пользователей нет</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Chat Selection Modal -->
+  <div id="newChatModal" style="display: none;" class="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+      <header class="p-4 border-b border-[#242f3d] flex items-center justify-between shrink-0">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="message-square-plus" class="w-4 h-4 text-[#2481cc]"></i>
+          <span>Начать диалог</span>
+        </h3>
+        <button onclick="window.closeNewChatModal()" class="p-1.5 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </header>
+
+      <div class="p-3 border-b border-[#242f3d]/60">
+        <input type="text" id="newChatSearchInput" oninput="window.filterNewChatUsers(this.value)" placeholder="Поиск по никнейму или имени..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+      </div>
+
+      <div id="newChatUsersList" class="flex-1 overflow-y-auto p-3 space-y-1.5">
+        <div class="text-center py-8 text-xs text-slate-500">Загрузка пользователей...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Modal -->
+  <div id="shopModal" style="display: none;" class="fixed inset-0 z-[75] bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-4 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-400"></i>
+        <h3 class="text-sm font-bold text-white">Магазин подарков FPVChat</h3>
+      </div>
+      <button onclick="window.closeShopModal()" class="p-1.5 text-slate-400 hover:text-white rounded-full">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+      <div class="bg-gradient-to-r from-amber-500/20 to-orange-500/20 p-4 rounded-2xl border border-amber-500/30 flex items-center justify-between">
+        <div>
+          <span class="text-xs text-amber-300 block font-medium">Ваш баланс:</span>
+          <span id="shopBalanceLabel" class="text-xl font-bold text-white flex items-center gap-1.5 mt-0.5">
+            <i data-lucide="star" class="w-5 h-5 fill-amber-400 text-amber-400"></i> 0 звёзд
+          </span>
+        </div>
+        <button onclick="window.showToast('Звёзды можно получить в подарок от Администрации')" class="px-3 py-1.5 rounded-xl bg-amber-500 text-black font-bold text-xs">Пополнить</button>
+      </div>
+
+      <div class="text-xs font-bold text-white">Каталог подарков</div>
+      <div id="shopCatalogContainer" class="grid grid-cols-2 gap-3 pb-8"></div>
+    </div>
+  </div>
+
+  <!-- Avatar Modal -->
+  <div id="avatarModal" style="display: none;" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+      <h3 class="text-sm font-bold text-white">Изменить аватарку</h3>
+      <input type="text" id="avatarUrlInput" placeholder="Ссылка на картинку (https://...)" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+      <div class="flex gap-2">
+        <button onclick="window.closeAvatarModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold">Отмена</button>
+        <button onclick="window.saveAvatarAction()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] text-xs text-white font-semibold">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Subpage Modal -->
+  <div id="settingsSubpageModal" style="display: none;" class="fixed inset-0 z-[70] bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-3.5 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-3">
+        <button onclick="window.closeSettingsSubpage()" class="p-1.5 -ml-1 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <h2 id="settingsSubpageTitle" class="text-sm font-bold text-white">Настройки</h2>
+      </div>
+    </header>
+    <div id="settingsSubpageContent" class="flex-1 overflow-y-auto p-4 space-y-4 safe-bottom"></div>
+  </div>
+
+  <!-- Application Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
+      onSnapshot, addDoc, getDocs, deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDFuJ9SILGuXVKWcbYyNj0_7eWZFVnVSoI",
+      authDomain: "fpvchat-web.firebaseapp.com",
+      projectId: "fpvchat-web",
+      storageBucket: "fpvchat-web.firebasestorage.app",
+      messagingSenderId: "998558942020",
+      appId: "1:998558942020:web:f3129f5684c5cdc0bbcd11",
+      measurementId: "G-WGCETX0NYP"
+    };
+
+    let app = null;
+    let db = null;
+
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } catch(e) {
+      console.warn("Firebase init:", e);
+    }
+
+    // App Constants
+    const ADMIN_USERNAME = 'evlan666';
+    const ADMIN_PASS = 'gitlerzzz1488';
+
+    // Gifts catalog: cheap ones <= 150 stars
+    const GIFTS_CATALOG = [
+      { id: 'cake', name: 'Торт', icon: '🎂', price: 50, isCheap: true },
+      { id: 'rocket', name: 'Ракета', icon: '🚀', price: 100, isCheap: true },
+      { id: 'heart', name: 'Сердце', icon: '💖', price: 150, isCheap: true },
+      { id: 'diamond', name: 'Бриллиант', icon: '💎', price: 300, isCheap: false },
+      { id: 'crown', name: 'Корона', icon: '👑', price: 500, isCheap: false },
+      { id: 'trophy', name: 'Кубок', icon: '🏆', price: 800, isCheap: false }
+    ];
+
+    // State Variables
+    let currentUser = null;
+    let currentPeer = null;
+    let allUsersList = [];
+    let localStream = null;
+    let remoteStream = null;
+    let peerConnection = null;
+    let activeCallRoomId = null;
+    let incomingCallData = null;
+    let callTimerInterval = null;
+    let callSeconds = 0;
+
+    let unsubscribeUser = null;
+    let unsubscribeUsers = null;
+    let unsubscribeDirectMsgs = null;
+    let unsubscribeDialogs = null;
+    let unsubscribeVerifRequests = null;
+
+    // Moderator Daily Limits State
+    let modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
+
+    function getTodayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // Safe Local Storage
+    window.safeStorage = {
+      getItem: (k) => { try { return localStorage.getItem(k); } catch(e) { return null; } },
+      setItem: (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} },
+      removeItem: (k) => { try { localStorage.removeItem(k); } catch(e) {} }
+    };
+
+    // UI Toast
+    window.showToast = function(msg, isErr = false) {
+      const t = document.getElementById('toastNotification');
+      const text = document.getElementById('toastText');
+      const icon = document.getElementById('toastIcon');
+      if (!t || !text) return;
+
+      text.innerText = msg;
+      icon.setAttribute('data-lucide', isErr ? 'alert-triangle' : 'info');
+      icon.className = `w-4 h-4 shrink-0 ${isErr ? 'text-red-400' : 'text-[#2481cc]'}`;
+      t.style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+
+      setTimeout(() => { t.style.display = 'none'; }, 3200);
+    };
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    // Modal Control Helpers
+    window.setModalVisible = (id, show) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? 'flex' : 'none';
+      if (window.lucide) lucide.createIcons();
+    };
+
+    window.closeAdminPasswordModal = () => window.setModalVisible('adminPasswordModal', false);
+    window.closeBannedModalAndExit = () => {
+      window.setModalVisible('bannedModal', false);
+      window.handleSignOut();
+    };
+    window.closeAdminPanel = () => window.setModalVisible('adminPanelModal', false);
+    window.closeShopModal = () => window.setModalVisible('shopModal', false);
+    window.closeAvatarModal = () => window.setModalVisible('avatarModal', false);
+    window.closeNewChatModal = () => window.setModalVisible('newChatModal', false);
+    window.closeDirectChat = () => {
+      window.setModalVisible('directChatRoom', false);
+      if (unsubscribeDirectMsgs) unsubscribeDirectMsgs();
+      currentPeer = null;
+    };
+    window.closeSupportChat = () => window.setModalVisible('supportChatRoom', false);
+    window.openSupportChat = () => window.setModalVisible('supportChatRoom', true);
+    window.closeSettingsSubpage = () => window.setModalVisible('settingsSubpageModal', false);
+    window.minimizeCall = () => {
+      window.setModalVisible('callOverlay', false);
+      window.showToast("Звонок продолжается в фоне");
+    };
+
+    // Tab Switching
+    window.switchAuthTab = function(tab) {
+      const tLog = document.getElementById('tabBtnLogin');
+      const tReg = document.getElementById('tabBtnRegister');
+      const vLog = document.getElementById('viewLogin');
+      const vReg = document.getElementById('viewRegister');
+
+      if (tab === 'login') {
+        tLog.className = "flex-1 py-2 text-xs font-semibold rounded-xl bg-[#2481cc] text-white shadow transition";
+        tReg.className = "flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 transition";
+        vLog.style.display = 'block';
+        vReg.style.display = 'none';
+      } else {
+        tReg.className = "flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white shadow transition";
+        tLog.className = "flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 transition";
+        vReg.style.display = 'block';
+        vLog.style.display = 'none';
+      }
+      if (window.lucide) lucide.createIcons();
+    };
+
+    window.handleLoginSubmit = async function() {
+      const usernameInput = document.getElementById('loginUsername');
+      const raw = (usernameInput?.value || '').trim();
+      if (!raw) return window.showToast("Введите ваш никнейм", true);
+
+      const username = raw.toLowerCase();
+
+      if (username === ADMIN_USERNAME) {
+        document.getElementById('adminMasterPasswordInput').value = '';
+        window.setModalVisible('adminPasswordModal', true);
+        return;
+      }
+
+      await performLogin(username);
+    };
+
+    window.submitAdminPassword = async function() {
+      const pass = document.getElementById('adminMasterPasswordInput').value;
+      if (pass !== ADMIN_PASS) {
+        return window.showToast("Неверный пароль владельца!", true);
+      }
+      window.closeAdminPasswordModal();
+      await performLogin(ADMIN_USERNAME, true);
+    };
+
+    async function performLogin(username, isOwnerAuth = false) {
+      const btn = document.getElementById('btnLoginSubmit');
+      if (btn) { btn.disabled = true; btn.innerText = "Подключение..."; }
+
+      try {
+        const userRef = doc(db, 'fpv_users', username);
+        const snap = await getDoc(userRef);
+
+        if (!snap.exists()) {
+          if (isOwnerAuth) {
+            const ownerData = {
+              username: ADMIN_USERNAME,
+              displayName: "Создатель",
+              birthYear: 2000,
+              role: 'owner',
+              isVerified: true,
+              isPremium: true,
+              stars: 99999,
+              gifts: ['crown', 'trophy'],
+              avatarUrl: 'https://placehold.co/120x120/2481cc/ffffff?text=OWNER',
+              isOnline: true,
+              createdAt: Date.now()
+            };
+            await setDoc(userRef, ownerData);
+            initUserSession(ownerData);
+            return;
+          }
+          window.showToast("Пользователь не найден. Зарегистрируйтесь!", true);
+          window.switchAuthTab('register');
+          return;
+        }
+
+        const data = snap.data();
+        if (data.isBanned) {
+          document.getElementById('bannedReasonText').innerText = data.banReason || 'Нарушение правил';
+          window.setModalVisible('bannedModal', true);
+          return;
+        }
+
+        if (isOwnerAuth || username === ADMIN_USERNAME) {
+          data.role = 'owner';
+        }
+
+        await updateDoc(userRef, { isOnline: true });
+        initUserSession(data);
+      } catch(err) {
+        window.showToast("Ошибка входа: " + err.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Продолжить"; }
+      }
+    }
+
+    window.handleRegisterSubmit = async function() {
+      const nameInput = document.getElementById('regUsername');
+      const yearInput = document.getElementById('regBirthYear');
+      const rawName = (nameInput?.value || '').trim();
+      const birthYear = parseInt(yearInput?.value, 10);
+
+      if (!rawName) return window.showToast("Придумайте никнейм", true);
+      if (!birthYear || birthYear < 1940 || birthYear > 2026) return window.showToast("Укажите корректный год рождения", true);
+
+      const username = rawName.toLowerCase();
+      if (username === ADMIN_USERNAME) return window.showToast("Этот никнейм зарезервирован!", true);
+
+      const btn = document.getElementById('btnRegisterSubmit');
+      if (btn) { btn.disabled = true; btn.innerText = "Регистрация..."; }
+
+      try {
+        const userRef = doc(db, 'fpv_users', username);
+        const snap = await getDoc(userRef);
+        if (snap.exists()) {
+          window.showToast("Этот никнейм уже занят!", true);
+          return;
+        }
+
+        const newUser = {
+          username: username,
+          displayName: rawName,
+          birthYear: birthYear,
+          role: 'user',
+          isVerified: false,
+          isPremium: false,
+          stars: 100,
+          gifts: [],
+          avatarUrl: `https://placehold.co/100x100/2481cc/ffffff?text=${encodeURIComponent(rawName.slice(0, 2).toUpperCase())}`,
+          isOnline: true,
+          createdAt: Date.now()
+        };
+
+        await setDoc(userRef, newUser);
+        initUserSession(newUser);
+        window.showToast("Регистрация успешна! Добро пожаловать!");
+      } catch(err) {
+        window.showToast("Ошибка регистрации: " + err.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Зарегистрироваться"; }
+      }
+    };
+
+    // User Session Initialization
+    function initUserSession(user) {
+      currentUser = user;
+      window.safeStorage.setItem('fpv_logged_user', user.username);
+      document.getElementById('authScreen').style.display = 'none';
+
+      const userRef = doc(db, 'fpv_users', user.username);
+      if (unsubscribeUser) unsubscribeUser();
+
+      unsubscribeUser = onSnapshot(userRef, (snap) => {
+        if (snap.exists()) {
+          currentUser = snap.data();
+          if (currentUser.isBanned) {
+            document.getElementById('bannedReasonText').innerText = currentUser.banReason || 'Нарушение правил';
+            window.setModalVisible('bannedModal', true);
+            return;
+          }
+          updateProfileUI();
+        }
+      }, (err) => console.warn("User sync error:", err));
+
+      listenAllUsers();
+      listenIncomingCalls();
+      listenDialogs();
+      listenVerifRequests();
+    }
+
+    window.handleSignOut = async function() {
+      if (currentUser && db) {
+        try {
+          await updateDoc(doc(db, 'fpv_users', currentUser.username), { isOnline: false });
+        } catch(e) {}
+      }
+      currentUser = null;
+      window.safeStorage.removeItem('fpv_logged_user');
+      document.getElementById('authScreen').style.display = 'flex';
+      window.switchAuthTab('login');
+    };
+
+    function updateProfileUI() {
+      if (!currentUser) return;
+      document.getElementById('headerStarsCount').innerText = currentUser.stars || 0;
+      document.getElementById('shopBalanceLabel').innerHTML = `<i data-lucide="star" class="w-5 h-5 fill-amber-400 text-amber-400"></i> ${currentUser.stars || 0} звёзд`;
+      
+      document.getElementById('settingsDisplayName').innerText = currentUser.displayName || currentUser.username;
+      document.getElementById('settingsUsernameTag').innerText = `@${currentUser.username}`;
+      document.getElementById('settingsBirthYearTag').innerText = `Год: ${currentUser.birthYear || '—'}`;
+      document.getElementById('settingsAvatarImg').src = currentUser.avatarUrl || 'https://placehold.co/100x100/2481cc/ffffff?text=U';
+
+      document.getElementById('settingsVerifBadge').style.display = currentUser.isVerified ? 'inline-block' : 'none';
+      document.getElementById('settingsPremiumBadge').style.display = currentUser.isPremium ? 'inline-block' : 'none';
+
+      const roleBadge = document.getElementById('settingsRoleBadge');
+      if (roleBadge) {
+        roleBadge.style.display = (currentUser.role === 'moderator') ? 'inline-block' : 'none';
+      }
+
+      // Admin panel button in settings appears ONLY for Owner or Moderator!
+      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME;
+      const isMod = currentUser.role === 'moderator';
+      const adminBtn = document.getElementById('btnSettingsAdminPanel');
+      if (adminBtn) {
+        adminBtn.style.display = (isOwner || isMod) ? 'flex' : 'none';
+        const sub = document.getElementById('settingsAdminSubtitle');
+        const title = document.getElementById('settingsAdminBtnTitle');
+        if (title) title.innerText = isOwner ? 'Панель Создателя' : 'Панель Модератора';
+        if (sub) sub.innerText = isOwner ? 'Полный доступ (без лимитов)' : 'Урезанная панель (лимиты 500★ и 2 подарка)';
+      }
+
+      // Gifts Render
+      const gBox = document.getElementById('profileGiftsContainer');
+      if (gBox) {
+        if (!currentUser.gifts || currentUser.gifts.length === 0) {
+          gBox.innerHTML = '<div class="text-[11px] text-slate-500 py-1">Подарков пока нет</div>';
+        } else {
+          gBox.innerHTML = currentUser.gifts.map(gid => {
+            const item = GIFTS_CATALOG.find(x => x.id === gid) || { icon: '🎁', name: 'Подарок' };
+            return `<div class="px-2.5 py-1.5 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center gap-1 shrink-0"><span class="text-base">${item.icon}</span><span class="text-[11px] font-medium text-slate-300">${item.name}</span></div>`;
+          }).join('');
+        }
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Switch Main Tabs
+    window.switchMainTab = function(tab) {
+      const tabs = ['contacts', 'calls', 'chats', 'settings'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`screen${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const nav = document.getElementById(`navTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (sec) sec.style.display = (t === tab) ? 'block' : 'none';
+        if (nav) {
+          if (t === tab) {
+            nav.className = 'flex flex-col items-center gap-0.5 active-nav-tab transition w-16';
+          } else {
+            nav.className = 'flex flex-col items-center gap-0.5 text-slate-400 hover:text-white transition w-16';
+          }
+        }
+      });
+
+      const titleEl = document.getElementById('screenHeaderTitle');
+      if (titleEl) {
+        const titles = { contacts: 'Контакты', calls: 'Звонки', chats: 'Чаты', settings: 'Настройки' };
+        titleEl.innerText = titles[tab] || 'Чаты';
+      }
+      if (window.lucide) lucide.createIcons();
+    };
+
+    // Central Users Realtime Listener
+    function listenAllUsers() {
+      if (!db) return;
+      if (unsubscribeUsers) unsubscribeUsers();
+
+      unsubscribeUsers = onSnapshot(collection(db, 'fpv_users'), (snap) => {
+        allUsersList = [];
+        snap.forEach(d => allUsersList.push({ id: d.id, ...d.data() }));
+
+        renderContactsTab();
+        renderQuickUsersCarousel();
+        renderNewChatModalList();
+        renderAdminUsersSelector();
+        renderBannedUsersList();
+      }, (err) => console.warn("Users sync error:", err));
+    }
+
+    function renderContactsTab() {
+      const container = document.getElementById('contactsListContainer');
+      const counter = document.getElementById('contactsCounterBadge');
+      if (!container || !currentUser) return;
+
+      const otherUsers = allUsersList.filter(u => u.username !== currentUser.username);
+      if (counter) counter.innerText = `${otherUsers.length} пользователей`;
+
+      if (otherUsers.length === 0) {
+        container.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">Других контактов пока нет</div>';
+        return;
+      }
+
+      container.innerHTML = otherUsers.map(u => `
+        <div onclick="window.openDirectChat('${u.username}')" class="p-3 rounded-2xl bg-[#17212b] hover:bg-[#242f3d]/60 cursor-pointer flex items-center justify-between border border-[#242f3d] transition">
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <img src="${u.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U'}" class="w-10 h-10 rounded-full object-cover">
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-emerald-500' : 'bg-slate-500'} border-2 border-[#17212b]"></span>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-white">${escapeHtml(u.displayName || u.username)}</span>
+                ${u.isVerified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>' : ''}
+                ${u.isPremium ? '<span class="px-1 text-[9px] rounded bg-amber-500 text-black font-bold">★</span>' : ''}
+                ${u.role === 'moderator' ? '<span class="px-1 text-[8px] rounded bg-emerald-500/20 text-emerald-400 font-bold">МОД</span>' : ''}
+              </div>
+              <span class="text-[10px] text-slate-400">@${escapeHtml(u.username)}</span>
+            </div>
+          </div>
+          <button class="p-2 text-slate-400 hover:text-white rounded-full">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderQuickUsersCarousel() {
+      const carousel = document.getElementById('quickUsersCarousel');
+      if (!carousel || !currentUser) return;
+
+      const otherUsers = allUsersList.filter(u => u.username !== currentUser.username && !u.isBanned);
+      if (otherUsers.length === 0) {
+        carousel.innerHTML = '<div class="text-[11px] text-slate-500 py-1">Нет других участников</div>';
+        return;
+      }
+
+      carousel.innerHTML = otherUsers.map(u => `
+        <div onclick="window.openDirectChat('${u.username}')" class="flex flex-col items-center gap-1 cursor-pointer shrink-0 p-1.5 rounded-xl hover:bg-[#242f3d]/40 transition" title="@${escapeHtml(u.username)}">
+          <div class="relative">
+            <img src="${u.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-11 h-11 rounded-full object-cover border border-[#242f3d]">
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-emerald-500' : 'bg-slate-500'} border-2 border-[#17212b]"></span>
+          </div>
+          <span class="text-[10px] text-slate-300 font-medium max-w-[55px] truncate text-center">${escapeHtml(u.displayName || u.username)}</span>
+        </div>
+      `).join('');
+    }
+
+    // New Chat Modal Handling
+    window.openNewChatModal = function() {
+      document.getElementById('newChatSearchInput').value = '';
+      window.setModalVisible('newChatModal', true);
+      renderNewChatModalList();
+    };
+
+    window.filterNewChatUsers = function(query) {
+      renderNewChatModalList(query.toLowerCase().trim());
+    };
+
+    function renderNewChatModalList(query = '') {
+      const box = document.getElementById('newChatUsersList');
+      if (!box || !currentUser) return;
+
+      let filtered = allUsersList.filter(u => u.username !== currentUser.username && !u.isBanned);
+      if (query) {
+        filtered = filtered.filter(u => 
+          (u.username || '').toLowerCase().includes(query) || 
+          (u.displayName || '').toLowerCase().includes(query)
+        );
+      }
+
+      if (filtered.length === 0) {
+        box.innerHTML = '<div class="text-center py-8 text-xs text-slate-500">Пользователи не найдены</div>';
+        return;
+      }
+
+      box.innerHTML = filtered.map(u => `
+        <div onclick="window.closeNewChatModal(); window.openDirectChat('${u.username}')" class="p-2.5 rounded-2xl bg-[#0e1621] hover:bg-[#242f3d] cursor-pointer flex items-center justify-between border border-[#242f3d]/60 transition">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative">
+              <img src="${u.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-10 h-10 rounded-full object-cover shrink-0">
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-emerald-500' : 'bg-slate-500'} border-2 border-[#17212b]"></span>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-white truncate">${escapeHtml(u.displayName || u.username)}</span>
+                ${u.isVerified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>' : ''}
+                ${u.isPremium ? '<span class="px-1 text-[9px] rounded bg-amber-500 text-black font-bold">★</span>' : ''}
+              </div>
+              <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(u.username)}</span>
+            </div>
+          </div>
+          <button class="px-3 py-1.5 rounded-xl bg-[#2481cc] hover:bg-[#1f70b0] text-white text-xs font-semibold flex items-center gap-1 shadow">
+            <span>Написать</span>
+            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Direct Chat Messaging
+    window.openDirectChat = async function(peerUsername) {
+      if (!db || !currentUser) return;
+      try {
+        let peerData = allUsersList.find(u => u.username === peerUsername);
+        if (!peerData) {
+          const snap = await getDoc(doc(db, 'fpv_users', peerUsername));
+          if (!snap.exists()) return window.showToast("Пользователь не найден", true);
+          peerData = snap.data();
+        }
+
+        currentPeer = peerData;
+        document.getElementById('directPeerName').innerText = currentPeer.displayName || currentPeer.username;
+        document.getElementById('directPeerAvatar').src = currentPeer.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U';
+        document.getElementById('directPeerBadge').style.display = currentPeer.isVerified ? 'inline-block' : 'none';
+        document.getElementById('directPeerStatus').innerText = currentPeer.isOnline ? 'в сети' : 'был недавно';
+
+        window.setModalVisible('directChatRoom', true);
+        listenDirectMessages();
+      } catch(e) {
+        window.showToast("Ошибка открытия чата: " + e.message, true);
+      }
+    };
+
+    function getRoomId(u1, u2) {
+      return [u1.toLowerCase(), u2.toLowerCase()].sort().join('_');
+    }
+
+    function listenDirectMessages() {
+      if (!db || !currentUser || !currentPeer) return;
+      if (unsubscribeDirectMsgs) unsubscribeDirectMsgs();
+
+      const roomId = getRoomId(currentUser.username, currentPeer.username);
+      const col = collection(db, 'fpv_direct_chats', roomId, 'messages');
+
+      unsubscribeDirectMsgs = onSnapshot(col, (snap) => {
+        const box = document.getElementById('directMessagesContainer');
+        if (!box) return;
+
+        const msgs = [];
+        snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
+        msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+        if (msgs.length === 0) {
+          box.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">Сообщений пока нет. Скажите привет!</div>';
+          return;
+        }
+
+        box.innerHTML = msgs.map(m => {
+          const isMe = m.sender === currentUser.username;
+          const time = new Date(m.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          let mediaHtml = '';
+
+          if (m.mediaUrl) {
+            if (m.mediaType?.startsWith('image/')) {
+              mediaHtml = `<img src="${m.mediaUrl}" class="rounded-xl max-h-48 w-full object-cover mb-1.5 cursor-pointer" onclick="window.open('${m.mediaUrl}')">`;
+            } else if (m.mediaType?.startsWith('video/')) {
+              mediaHtml = `<video src="${m.mediaUrl}" controls class="rounded-xl max-h-48 w-full mb-1.5"></video>`;
+            } else {
+              mediaHtml = `<a href="${m.mediaUrl}" download="${m.mediaName || 'file'}" class="p-2 bg-black/20 rounded-xl flex items-center gap-2 text-[11px] mb-1.5"><i data-lucide="file" class="w-4 h-4"></i><span class="truncate">${escapeHtml(m.mediaName || 'Файл')}</span></a>`;
+            }
+          }
+
+          return `
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+              <div class="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md ${isMe ? 'bg-[#2481cc] text-white rounded-br-xs' : 'bg-[#17212b] text-slate-100 rounded-bl-xs border border-[#242f3d]'}">
+                ${mediaHtml}
+                ${m.text ? `<p class="leading-relaxed break-words">${escapeHtml(m.text)}</p>` : ''}
+                <span class="text-[9px] block text-right mt-1 opacity-70">${time}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        box.scrollTop = box.scrollHeight;
+        if (window.lucide) lucide.createIcons();
+      }, (err) => console.warn("Messages sync error:", err));
+    }
+
+    window.sendDirectMessage = async function() {
+      const inp = document.getElementById('directMessageInput');
+      const text = (inp?.value || '').trim();
+      if (!text || !currentUser || !currentPeer) return;
+
+      inp.value = '';
+      await pushMessageRecord({ text });
+    };
+
+    window.handleDirectFileUpload = function(e) {
+      const file = e.target.files?.[0];
+      if (!file || !currentUser || !currentPeer) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        return window.showToast("Файл слишком большой (макс. 2 МБ)", true);
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function() {
+        await pushMessageRecord({
+          text: '',
+          mediaUrl: reader.result,
+          mediaType: file.type,
+          mediaName: file.name
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    };
+
+    async function pushMessageRecord(payload) {
+      const roomId = getRoomId(currentUser.username, currentPeer.username);
+      const msgData = {
+        sender: currentUser.username,
+        createdAt: Date.now(),
+        ...payload
+      };
+
+      try {
+        await addDoc(collection(db, 'fpv_direct_chats', roomId, 'messages'), msgData);
+        
+        const preview = payload.text || (payload.mediaType?.startsWith('image/') ? '📷 Фотография' : '📎 Файл');
+        await setDoc(doc(db, 'fpv_dialogs', currentUser.username, 'items', currentPeer.username), {
+          peer: currentPeer.username,
+          displayName: currentPeer.displayName || currentPeer.username,
+          avatarUrl: currentPeer.avatarUrl || '',
+          isVerified: currentPeer.isVerified || false,
+          lastMsg: preview,
+          updatedAt: Date.now()
+        });
+
+        await setDoc(doc(db, 'fpv_dialogs', currentPeer.username, 'items', currentUser.username), {
+          peer: currentUser.username,
+          displayName: currentUser.displayName || currentUser.username,
+          avatarUrl: currentUser.avatarUrl || '',
+          isVerified: currentUser.isVerified || false,
+          lastMsg: preview,
+          updatedAt: Date.now()
+        });
+      } catch(e) {
+        window.showToast("Ошибка отправки: " + e.message, true);
+      }
+    }
+
+    // Active Dialogs Listener
+    function listenDialogs() {
+      if (!db || !currentUser) return;
+      if (unsubscribeDialogs) unsubscribeDialogs();
+
+      const col = collection(db, 'fpv_dialogs', currentUser.username, 'items');
+      unsubscribeDialogs = onSnapshot(col, (snap) => {
+        const box = document.getElementById('dynamicChatsList');
+        if (!box) return;
+
+        const items = [];
+        snap.forEach(d => items.push(d.data()));
+        items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+        if (items.length === 0) {
+          box.innerHTML = `
+            <div class="p-8 text-center space-y-3">
+              <p class="text-xs text-slate-500">У вас пока нет активных диалогов</p>
+              <button onclick="window.openNewChatModal()" class="px-4 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl">
+                Выбрать контакт для общения
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        box.innerHTML = items.map(chat => `
+          <div onclick="window.openDirectChat('${chat.peer}')" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/50 cursor-pointer transition">
+            <img src="${chat.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U'}" class="w-12 h-12 rounded-full object-cover shrink-0">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-0.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-white truncate">${escapeHtml(chat.displayName)}</span>
+                  ${chat.isVerified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>' : ''}
+                </div>
+                <span class="text-[10px] text-slate-500 font-medium">${new Date(chat.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <p class="text-xs text-slate-400 truncate">${escapeHtml(chat.lastMsg)}</p>
+            </div>
+          </div>
+        `).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }, (err) => console.warn("Dialogs sync error:", err));
+    }
+
+    // WebRTC Calls Implementation
+    const rtcConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    window.startCall = async function(type = 'audio') {
+      if (!currentUser || !currentPeer) return;
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: (type === 'video')
+        });
+
+        const isVideo = (type === 'video');
+        document.getElementById('callAudioAvatar').style.display = isVideo ? 'none' : 'flex';
+        document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none';
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('callPeerName').innerText = currentPeer.displayName || currentPeer.username;
+        document.getElementById('callPeerInitial').innerText = (currentPeer.displayName || currentPeer.username).charAt(0).toUpperCase();
+
+        window.setModalVisible('callOverlay', true);
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+        remoteStream = new MediaStream();
+        peerConnection.ontrack = (event) => {
+          event.streams[0].getTracks().forEach(t => remoteStream.addTrack(t));
+          document.getElementById('remoteVideo').srcObject = remoteStream;
+        };
+
+        const callRoom = doc(collection(db, 'fpv_call_rooms'));
+        activeCallRoomId = callRoom.id;
+
+        peerConnection.onicecandidate = async (e) => {
+          if (e.candidate) {
+            await addDoc(collection(db, 'fpv_call_rooms', activeCallRoomId, 'callerCandidates'), e.candidate.toJSON());
+          }
+        };
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        await setDoc(callRoom, {
+          caller: currentUser.username,
+          receiver: currentPeer.username,
+          type: type,
+          offer: { type: offer.type, sdp: offer.sdp },
+          status: 'calling',
+          createdAt: Date.now()
+        });
+
+        onSnapshot(callRoom, (snap) => {
+          const data = snap.data();
+          if (!data) return;
+
+          if (data.status === 'rejected') {
+            window.showToast("Вызов отклонен");
+            window.endActiveCall();
+          } else if (data.status === 'connected' && !peerConnection.currentRemoteDescription && data.answer) {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            startCallTimer();
+          }
+        });
+
+        onSnapshot(collection(db, 'fpv_call_rooms', activeCallRoomId, 'calleeCandidates'), (snap) => {
+          snap.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+              peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+            }
+          });
+        });
+
+      } catch(err) {
+        window.showToast("Ошибка звонка: " + err.message, true);
+        window.endActiveCall();
+      }
+    };
+
+    function listenIncomingCalls() {
+      if (!db || !currentUser) return;
+      onSnapshot(collection(db, 'fpv_call_rooms'), (snap) => {
+        snap.forEach(d => {
+          const call = d.data();
+          if (call.receiver === currentUser.username && call.status === 'calling' && !activeCallRoomId) {
+            incomingCallData = { id: d.id, ...call };
+            document.getElementById('incomingCallerName').innerText = call.caller;
+            document.getElementById('incomingCallTypeLabel').innerText = (call.type === 'video') ? 'Входящий видеозвонок' : 'Входящий аудиозвонок';
+            window.setModalVisible('incomingCallModal', true);
+          }
+        });
+      }, (err) => console.warn("Incoming calls sync:", err));
+    }
+
+    window.rejectIncomingCall = async function() {
+      if (incomingCallData) {
+        await updateDoc(doc(db, 'fpv_call_rooms', incomingCallData.id), { status: 'rejected' });
+        incomingCallData = null;
+      }
+      window.setModalVisible('incomingCallModal', false);
+    };
+
+    window.acceptIncomingCall = async function() {
+      if (!incomingCallData) return;
+      const call = incomingCallData;
+      activeCallRoomId = call.id;
+      window.setModalVisible('incomingCallModal', false);
+
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: (call.type === 'video')
+        });
+
+        const isVideo = (call.type === 'video');
+        document.getElementById('callAudioAvatar').style.display = isVideo ? 'none' : 'flex';
+        document.getElementById('localVideo').style.display = isVideo ? 'block' : 'none';
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('callPeerName').innerText = call.caller;
+        document.getElementById('callPeerInitial').innerText = call.caller.charAt(0).toUpperCase();
+
+        window.setModalVisible('callOverlay', true);
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+        localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+
+        remoteStream = new MediaStream();
+        peerConnection.ontrack = (event) => {
+          event.streams[0].getTracks().forEach(t => remoteStream.addTrack(t));
+          document.getElementById('remoteVideo').srcObject = remoteStream;
+        };
+
+        peerConnection.onicecandidate = async (e) => {
+          if (e.candidate) {
+            await addDoc(collection(db, 'fpv_call_rooms', activeCallRoomId, 'calleeCandidates'), e.candidate.toJSON());
+          }
+        };
+
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        await updateDoc(doc(db, 'fpv_call_rooms', activeCallRoomId), {
+          answer: { type: answer.type, sdp: answer.sdp },
+          status: 'connected'
+        });
+
+        onSnapshot(collection(db, 'fpv_call_rooms', activeCallRoomId, 'callerCandidates'), (snap) => {
+          snap.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+              peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+            }
+          });
+        });
+
+        startCallTimer();
+      } catch(err) {
+        window.showToast("Ошибка соединения: " + err.message, true);
+        window.endActiveCall();
+      }
+    };
+
+    window.endActiveCall = async function() {
+      if (callTimerInterval) clearInterval(callTimerInterval);
+      callSeconds = 0;
+      document.getElementById('callTimerLabel').innerText = "Соединение...";
+
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (activeCallRoomId && db) {
+        try {
+          await updateDoc(doc(db, 'fpv_call_rooms', activeCallRoomId), { status: 'ended' });
+        } catch(e) {}
+        activeCallRoomId = null;
+      }
+
+      window.setModalVisible('callOverlay', false);
+    };
+
+    function startCallTimer() {
+      callSeconds = 0;
+      if (callTimerInterval) clearInterval(callTimerInterval);
+      callTimerInterval = setInterval(() => {
+        callSeconds++;
+        const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+        const s = String(callSeconds % 60).padStart(2, '0');
+        document.getElementById('callTimerLabel').innerText = `${m}:${s}`;
+      }, 1000);
+    }
+
+    window.toggleCallMic = function() {
+      if (!localStream) return;
+      const audioTrack = localStream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        document.getElementById('iconMic').setAttribute('data-lucide', audioTrack.enabled ? 'mic' : 'mic-off');
+        if (window.lucide) lucide.createIcons();
+      }
+    };
+
+    window.toggleCallVideo = function() {
+      if (!localStream) return;
+      const videoTrack = localStream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        document.getElementById('iconCam').setAttribute('data-lucide', videoTrack.enabled ? 'video' : 'video-off');
+        if (window.lucide) lucide.createIcons();
+      }
+    };
+
+    // Fully Functional Admin Panel Logic
+    window.openAdminPanel = async function() {
+      if (!currentUser) return;
+      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME;
+      const isMod = currentUser.role === 'moderator';
+
+      if (!isOwner && !isMod) {
+        return window.showToast("У вас нет доступа к Панели управления!", true);
+      }
+
+      // Fetch or init daily limits if moderator
+      if (isMod) {
+        await fetchModDailyLimits();
+      }
+
+      document.getElementById('adminPanelTitle').innerText = isOwner ? "Панель Создателя" : "Панель Модератора";
+      document.getElementById('adminPanelSubtitle').innerText = isOwner ? "Полный неограниченный доступ Создателя" : "Урезанная панель (лимиты 500★ и 2 подарка/день)";
+
+      // Moderator Limit Banner
+      const banner = document.getElementById('modLimitBanner');
+      if (banner) {
+        banner.style.display = isMod ? 'flex' : 'none';
+        updateModLimitDisplay();
+      }
+
+      // Hide restricted buttons for moderator
+      document.getElementById('btnAssignMod').style.display = isOwner ? 'block' : 'none';
+      document.getElementById('btnAdminGiveVerif').style.display = isOwner ? 'block' : 'none';
+      document.getElementById('btnAdminGivePremium').style.display = isOwner ? 'block' : 'none';
+
+      // Hide tabs for moderator: NO bans, NO verification requests tab
+      document.getElementById('tabAdminBans').style.display = isOwner ? 'flex' : 'none';
+      document.getElementById('tabAdminRequests').style.display = isOwner ? 'flex' : 'none';
+
+      const desc = document.getElementById('btnAdminGiveStarsDesc');
+      if (desc) desc.innerText = isMod ? `Лимит: до 500 в день` : 'Пополнить баланс';
+
+      renderAdminUsersSelector();
+      renderAdminGifts();
+      window.switchAdminTab('actions');
+      window.setModalVisible('adminPanelModal', true);
+    };
+
+    async function fetchModDailyLimits() {
+      if (!db || !currentUser) return;
+      const key = `${currentUser.username}_${getTodayKey()}`;
+      try {
+        const ref = doc(db, 'fpv_mod_daily', key);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          modDailyUsage = snap.data();
+        } else {
+          modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
+        }
+      } catch(e) {
+        console.warn("fetch limits error:", e);
+        modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
+      }
+    }
+
+    function updateModLimitDisplay() {
+      const sLabel = document.getElementById('modStarsLimitLabel');
+      const gLabel = document.getElementById('modGiftsLimitLabel');
+      if (sLabel) {
+        const left = Math.max(0, 500 - (modDailyUsage.starsGiven || 0));
+        sLabel.innerText = `★ ${left}/500 осталось`;
+      }
+      if (gLabel) {
+        const leftG = Math.max(0, 2 - (modDailyUsage.giftsGiven || 0));
+        gLabel.innerText = `🎁 ${leftG}/2 подарка`;
+      }
+    }
+
+    async function recordModUsage(addStars = 0, addGifts = 0) {
+      if (!db || !currentUser) return;
+      const key = `${currentUser.username}_${getTodayKey()}`;
+      modDailyUsage.starsGiven = (modDailyUsage.starsGiven || 0) + addStars;
+      modDailyUsage.giftsGiven = (modDailyUsage.giftsGiven || 0) + addGifts;
+      try {
+        await setDoc(doc(db, 'fpv_mod_daily', key), {
+          starsGiven: modDailyUsage.starsGiven,
+          giftsGiven: modDailyUsage.giftsGiven,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch(e) {
+        console.warn("record usage error:", e);
+      }
+      updateModLimitDisplay();
+    }
+
+    window.switchAdminTab = function(tab) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      // Disallow bans and requests tabs for moderators
+      if (!isOwner && (tab === 'bans' || tab === 'requests')) {
+        window.showToast("Этот раздел доступен только Создателю!", true);
+        tab = 'actions';
+      }
+
+      ['actions', 'requests', 'bans'].forEach(t => {
+        const tabBtn = document.getElementById(`tabAdmin${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const tabContent = document.getElementById(`adminContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (tabBtn) {
+          tabBtn.className = (t === tab) 
+            ? 'flex-1 py-1.5 rounded-lg bg-[#2481cc] text-white font-medium flex items-center justify-center gap-1 transition' 
+            : 'flex-1 py-1.5 rounded-lg text-slate-400 font-medium flex items-center justify-center gap-1 transition';
+        }
+        if (tabContent) {
+          tabContent.style.display = (t === tab) ? 'block' : 'none';
+        }
+      });
+      if (window.lucide) lucide.createIcons();
+    };
+
+    function renderAdminUsersSelector() {
+      const select = document.getElementById('adminTargetUser');
+      const banSelect = document.getElementById('adminBanTargetUser');
+      const directCards = document.getElementById('adminDirectUserCards');
+      if (!select) return;
+
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+
+      if (allUsersList.length === 0) {
+        select.innerHTML = '<option value="">Нет зарегистрированных пользователей</option>';
+        if (banSelect) banSelect.innerHTML = '<option value="">Нет пользователей</option>';
+        if (directCards) directCards.innerHTML = '<div class="text-[11px] text-slate-500 py-2 text-center">Нет пользователей</div>';
+        return;
+      }
+
+      let opts = '<option value="">-- Выберите пользователя --</option>';
+      let banOpts = '<option value="">-- Выберите пользователя для бана --</option>';
+
+      allUsersList.forEach(u => {
+        const isCurrent = currentUser && u.username === currentUser.username;
+        const tag = isCurrent ? ' (Вы)' : '';
+        opts += `<option value="${u.username}">@${escapeHtml(u.username)} - ${escapeHtml(u.displayName || u.username)}${tag}</option>`;
+        if (!u.isBanned && u.username !== ADMIN_USERNAME) {
+          banOpts += `<option value="${u.username}">@${escapeHtml(u.username)} - ${escapeHtml(u.displayName || u.username)}</option>`;
+        }
+      });
+
+      select.innerHTML = opts;
+      if (banSelect) banSelect.innerHTML = banOpts;
+
+      // Auto-select first or current
+      if (!select.value && allUsersList.length > 0) {
+        select.value = allUsersList[0].username;
+        window.handleAdminUserSelectChange();
+      }
+
+      // Direct Action Cards
+      if (directCards) {
+        directCards.innerHTML = allUsersList.map(u => {
+          let buttonsHtml = `<button onclick="window.adminSelectAndAward('${u.username}', 'stars', 500)" class="px-2 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] font-bold">+500★</button>`;
+          if (isOwner) {
+            buttonsHtml += `
+              <button onclick="window.adminSelectAndAward('${u.username}', 'verif')" class="px-2 py-1 rounded-lg bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 text-[10px] font-bold">Галочка</button>
+              <button onclick="window.adminSelectAndAward('${u.username}', 'premium')" class="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] font-bold">Prem</button>
+            `;
+          }
+          return `
+            <div class="p-2 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between">
+              <div class="min-w-0 mr-2">
+                <span class="text-xs font-bold text-white block truncate">@${escapeHtml(u.username)}</span>
+                <span class="text-[10px] text-slate-400 block truncate">Звёзды: ${u.stars || 0} | ${u.isVerified ? 'Галочка' : 'Обычный'} ${u.role === 'moderator' ? '| МОД' : ''}</span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                ${buttonsHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    window.handleAdminUserSelectChange = function() {
+      const select = document.getElementById('adminTargetUser');
+      const label = document.getElementById('adminSelectedUserLabel');
+      if (select && label) {
+        label.innerText = select.value ? `@${select.value}` : '@...';
+      }
+    };
+
+    window.adminSelectAndAward = function(username, type, value = null) {
+      const select = document.getElementById('adminTargetUser');
+      if (select) select.value = username;
+      window.handleAdminUserSelectChange();
+
+      if (type === 'stars') window.adminGiveStars(value || 500);
+      else if (type === 'verif') window.adminGiveVerification();
+      else if (type === 'premium') window.adminGivePremium();
+    };
+
+    // Moderator: Limit 500 stars per day! Owner: Unlimited
+    window.adminGiveStars = async function(count = 500) {
+      const target = document.getElementById('adminTargetUser').value;
+      if (!target) return window.showToast("Выберите пользователя из списка!", true);
+
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+
+      if (!isOwner) {
+        const used = modDailyUsage.starsGiven || 0;
+        if (used + count > 500) {
+          const left = Math.max(0, 500 - used);
+          return window.showToast(`Лимит модератора исчерпан! Доступно звёзд сегодня: ${left}`, true);
+        }
+      }
+
+      try {
+        const ref = doc(db, 'fpv_users', target);
+        const snap = await getDoc(ref);
+        const currentStars = snap.exists() ? (snap.data().stars || 0) : 0;
+        await updateDoc(ref, { stars: currentStars + count });
+
+        if (!isOwner) {
+          await recordModUsage(count, 0);
+        }
+
+        window.showToast(`Выдано ${count} звёзд пользователю @${target}!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    // Moderators CANNOT give verification
+    window.adminGiveVerification = async function() {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) {
+        return window.showToast("Модераторы не могут выдавать галочки!", true);
+      }
+
+      const target = document.getElementById('adminTargetUser').value;
+      if (!target) return window.showToast("Выберите пользователя из списка!", true);
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', target), { isVerified: true });
+        window.showToast(`Галочка успешно выдана @${target}!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    // Moderators CANNOT give premium
+    window.adminGivePremium = async function() {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) {
+        return window.showToast("Модераторы не могут выдавать Premium!", true);
+      }
+
+      const target = document.getElementById('adminTargetUser').value;
+      if (!target) return window.showToast("Выберите пользователя из списка!", true);
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', target), { isPremium: true });
+        window.showToast(`Премиум статус выдан @${target}!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    // Moderators CANNOT assign other moderators
+    window.adminAssignModerator = async function() {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) {
+        return window.showToast("Только Создатель может назначать модераторов!", true);
+      }
+
+      const target = document.getElementById('adminTargetUser').value;
+      if (!target) return window.showToast("Выберите пользователя из списка!", true);
+      if (target === ADMIN_USERNAME) return window.showToast("Нельзя понизить создателя", true);
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', target), { role: 'moderator' });
+        window.showToast(`Пользователь @${target} назначен модератором!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    function renderAdminGifts() {
+      const box = document.getElementById('adminGiftsSelector');
+      const note = document.getElementById('adminGiftsTypeNote');
+      if (!box) return;
+
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (note) {
+        note.innerText = isOwner ? 'Все подарки (безлимит)' : 'До 2 недорогих подарков в день (<=150★)';
+      }
+
+      box.innerHTML = GIFTS_CATALOG.map(g => {
+        const isAllowed = isOwner || g.isCheap;
+        return `
+          <button onclick="window.adminSendGift('${g.id}')" class="p-2 rounded-xl border border-[#242f3d] text-center transition ${isAllowed ? 'bg-[#0e1621] hover:bg-[#242f3d] active:scale-95' : 'bg-[#0e1621]/40 opacity-40 cursor-not-allowed'}">
+            <span class="text-xl block mb-0.5">${g.icon}</span>
+            <span class="text-[10px] text-slate-300 truncate block">${g.name}</span>
+            <span class="text-[9px] ${g.isCheap ? 'text-emerald-400' : 'text-amber-400'} font-semibold block">${g.price}★</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // Moderator: Max 2 cheap gifts per day!
+    window.adminSendGift = async function(giftId) {
+      const target = document.getElementById('adminTargetUser').value;
+      if (!target) return window.showToast("Выберите пользователя из списка!", true);
+
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const gift = GIFTS_CATALOG.find(x => x.id === giftId);
+
+      if (!isOwner) {
+        if (!gift || !gift.isCheap) {
+          return window.showToast("Модераторам разрешены только недорогие подарки (до 150★)!", true);
+        }
+        const used = modDailyUsage.giftsGiven || 0;
+        if (used >= 2) {
+          return window.showToast("Лимит модератора исчерпан: максимум 2 подарка в день!", true);
+        }
+      }
+
+      try {
+        const ref = doc(db, 'fpv_users', target);
+        const snap = await getDoc(ref);
+        const gifts = snap.exists() ? (snap.data().gifts || []) : [];
+        gifts.push(giftId);
+        await updateDoc(ref, { gifts });
+
+        if (!isOwner) {
+          await recordModUsage(0, 1);
+        }
+
+        window.showToast(`Подарок ${gift?.icon || ''} отправлен пользователю @${target}!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    // Bans Implementation (OWNER ONLY)
+    window.banUserAction = async function() {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) {
+        return window.showToast("Модераторы не имеют права блокировать пользователей!", true);
+      }
+
+      const target = document.getElementById('adminBanTargetUser').value;
+      const reason = document.getElementById('adminBanReasonInput').value.trim() || 'Нарушение правил';
+
+      if (!target) return window.showToast("Выберите аккаунт для бана!", true);
+      if (target === ADMIN_USERNAME) return window.showToast("Нельзя забанить создателя!", true);
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', target), {
+          isBanned: true,
+          banReason: reason,
+          isOnline: false
+        });
+        document.getElementById('adminBanReasonInput').value = '';
+        window.showToast(`Пользователь @${target} заблокирован!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    window.unbanUserAction = async function(target) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) {
+        return window.showToast("Модераторы не имеют права разблокировать пользователей!", true);
+      }
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', target), {
+          isBanned: false,
+          banReason: null
+        });
+        window.showToast(`Пользователь @${target} разблокирован!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    function renderBannedUsersList() {
+      const list = document.getElementById('bannedUsersList');
+      const badge = document.getElementById('badgeBansCount');
+      if (!list) return;
+
+      const banned = allUsersList.filter(u => u.isBanned);
+
+      if (badge) {
+        badge.innerText = banned.length;
+        badge.style.display = banned.length > 0 ? 'inline-block' : 'none';
+      }
+
+      if (banned.length === 0) {
+        list.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">Заблокированных пользователей нет</div>';
+        return;
+      }
+
+      list.innerHTML = banned.map(u => `
+        <div class="p-3 bg-[#0e1621] rounded-2xl border border-red-500/20 flex items-center justify-between">
+          <div class="min-w-0 mr-2">
+            <span class="text-xs font-bold text-white block truncate">${escapeHtml(u.displayName || u.username)} (@${u.username})</span>
+            <span class="text-[10px] text-red-300 block truncate">Причина: ${escapeHtml(u.banReason || 'Нарушение')}</span>
+          </div>
+          <button onclick="window.unbanUserAction('${u.username}')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shrink-0 shadow">Разбанить</button>
+        </div>
+      `).join('');
+    }
+
+    // Verification Requests Queue (Strictly Owner Only)
+    window.requestVerification = async function() {
+      if (!currentUser || !db) return;
+      try {
+        const reqRef = doc(db, 'fpv_verif_requests', currentUser.username);
+        await setDoc(reqRef, {
+          username: currentUser.username,
+          displayName: currentUser.displayName || currentUser.username,
+          avatarUrl: currentUser.avatarUrl || '',
+          createdAt: Date.now(),
+          status: 'pending'
+        });
+        window.showToast("Запрос на верификацию отправлен Администратору!");
+      } catch(e) {
+        window.showToast("Ошибка отправки: " + e.message, true);
+      }
+    };
+
+    function listenVerifRequests() {
+      if (!db) return;
+      if (unsubscribeVerifRequests) unsubscribeVerifRequests();
+
+      unsubscribeVerifRequests = onSnapshot(collection(db, 'fpv_verif_requests'), (snap) => {
+        const list = document.getElementById('verifRequestsList');
+        const badge = document.getElementById('badgeReqCount');
+        if (!list) return;
+
+        const reqs = [];
+        snap.forEach(d => {
+          const r = d.data();
+          if (r.status === 'pending') reqs.push({ id: d.id, ...r });
+        });
+
+        if (badge) {
+          badge.innerText = reqs.length;
+          badge.style.display = reqs.length > 0 ? 'inline-block' : 'none';
+        }
+
+        if (reqs.length === 0) {
+          list.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">Запросов на галочку нет</div>';
+          return;
+        }
+
+        list.innerHTML = reqs.map(r => `
+          <div class="p-3 bg-[#0e1621] rounded-2xl border border-[#242f3d] flex items-center justify-between">
+            <div class="flex items-center gap-2.5 min-w-0 mr-2">
+              <img src="${r.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-8 h-8 rounded-full object-cover">
+              <div class="min-w-0">
+                <span class="text-xs font-bold text-white block truncate">${escapeHtml(r.displayName || r.username)}</span>
+                <span class="text-[10px] text-slate-400 block">@${escapeHtml(r.username)}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="window.adminApproveVerification('${r.username}')" class="px-2.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold flex items-center gap-1 shadow">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                <span>Принять</span>
+              </button>
+              <button onclick="window.adminRejectVerification('${r.username}')" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+        if (window.lucide) lucide.createIcons();
+      }, (err) => console.warn("Verif requests sync:", err));
+    }
+
+    window.adminApproveVerification = async function(targetUsername) {
+      if (!currentUser || (currentUser.role !== 'owner' && currentUser.username !== ADMIN_USERNAME)) {
+        return window.showToast("Только Создатель может одобрять запросы на галочку!", true);
+      }
+      try {
+        await updateDoc(doc(db, 'fpv_users', targetUsername), { isVerified: true });
+        await deleteDoc(doc(db, 'fpv_verif_requests', targetUsername));
+        window.showToast(`Галочка выдана пользователю @${targetUsername}!`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    window.adminRejectVerification = async function(targetUsername) {
+      if (!currentUser || (currentUser.role !== 'owner' && currentUser.username !== ADMIN_USERNAME)) {
+        return window.showToast("Только Создатель может отклонять запросы!", true);
+      }
+      try {
+        await deleteDoc(doc(db, 'fpv_verif_requests', targetUsername));
+        window.showToast(`Запрос от @${targetUsername} отклонен`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    // Subpages Settings Content
+    window.openSettingsSubpage = function(sub) {
+      const t = document.getElementById('settingsSubpageTitle');
+      const c = document.getElementById('settingsSubpageContent');
+      if (!t || !c) return;
+
+      const titles = {
+        notifications: "Уведомления и звуки",
+        privacy: "Конфиденциальность",
+        storage: "Данные и память"
+      };
+
+      t.innerText = titles[sub] || "Настройки";
+      c.innerHTML = `
+        <div class="bg-[#17212b] rounded-2xl border border-[#242f3d] p-4 text-xs text-slate-300 leading-relaxed shadow-sm">
+          Параметры раздела <b>${titles[sub]}</b> оптимизированы для мобильного приложения FPVChat.
+        </div>
+        <button onclick="window.showToast('Настройки сохранены')" class="w-full py-3 rounded-2xl bg-[#2481cc] text-white text-xs font-semibold shadow">Сохранить</button>
+      `;
+
+      window.setModalVisible('settingsSubpageModal', true);
+    };
+
+    // Shop Catalog
+    window.openShopModal = function() {
+      const box = document.getElementById('shopCatalogContainer');
+      if (box) {
+        box.innerHTML = GIFTS_CATALOG.map(g => `
+          <div class="p-3.5 bg-[#17212b] rounded-2xl border border-[#242f3d] flex flex-col items-center text-center shadow-sm">
+            <span class="text-3xl mb-1.5">${g.icon}</span>
+            <span class="text-xs font-bold text-white mb-1">${g.name}</span>
+            <span class="text-[11px] text-amber-400 font-semibold mb-2.5 flex items-center gap-1">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i> ${g.price} звёзд
+            </span>
+            <button onclick="window.buyGiftAction('${g.id}', ${g.price})" class="w-full py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-semibold transition active:scale-95">Купить</button>
+          </div>
+        `).join('');
+      }
+      window.setModalVisible('shopModal', true);
+    };
+
+    window.buyGiftAction = async function(giftId, price) {
+      if (!currentUser) return;
+      if ((currentUser.stars || 0) < price) {
+        return window.showToast("Недостаточно звёзд для покупки!", true);
+      }
+
+      try {
+        const ref = doc(db, 'fpv_users', currentUser.username);
+        const gifts = currentUser.gifts || [];
+        gifts.push(giftId);
+        await updateDoc(ref, {
+          stars: currentUser.stars - price,
+          gifts: gifts
+        });
+        window.showToast("Подарок успешно куплен!");
+      } catch(e) {
+        window.showToast("Ошибка покупки: " + e.message, true);
+      }
+    };
+
+    // Avatar Customization
+    window.openAvatarModal = function() {
+      document.getElementById('avatarUrlInput').value = '';
+      window.setModalVisible('avatarModal', true);
+    };
+
+    window.saveAvatarAction = async function() {
+      const url = document.getElementById('avatarUrlInput').value.trim();
+      if (!url || !currentUser) return;
+
+      try {
+        await updateDoc(doc(db, 'fpv_users', currentUser.username), { avatarUrl: url });
+        window.closeAvatarModal();
+        window.showToast("Аватарка обновлена!");
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    // Auto-login from saved session
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      const savedUser = window.safeStorage.getItem('fpv_logged_user');
+      if (savedUser) {
+        performLogin(savedUser);
+      }
+    });
+  </script>
+</body>
+</html>
