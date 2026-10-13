@@ -11,8 +11,11 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- EmailJS SDK for direct email delivery -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     * {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -59,8 +62,18 @@
       animation: pulse-ring 2s infinite ease-in-out;
     }
 
+    .story-border {
+      background: linear-gradient(135deg, #2481cc, #50b5ff, #833ab4, #fd1d1d);
+      padding: 2px;
+      border-radius: 9999px;
+    }
+
     .active-nav-tab {
-      color: #2481cc !important;
+      color: #50b5ff !important;
+    }
+    .active-nav-tab svg {
+      transform: scale(1.1);
+      transition: transform 0.2s;
     }
   </style>
 </head>
@@ -68,26 +81,8 @@
 
   <!-- Toast Notification Box -->
   <div id="toastNotification" style="display: none;" class="fixed top-5 left-1/2 -translate-x-1/2 z-[250] max-w-[92%] px-4 py-2.5 rounded-2xl bg-[#17212b]/95 border border-[#2b5278] text-white text-xs font-medium shadow-2xl flex items-center gap-2 transition-all duration-300">
-    <i id="toastIcon" data-lucide="info" class="w-4 h-4 text-[#2481cc] shrink-0"></i>
+    <i id="toastIcon" data-lucide="info" class="w-4 h-4 text-[#50b5ff] shrink-0"></i>
     <span id="toastText" class="truncate">Уведомление</span>
-  </div>
-
-  <!-- Master Admin Password Modal -->
-  <div id="adminPasswordModal" style="display: none;" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl">
-      <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
-        <i data-lucide="shield-alert" class="w-6 h-6"></i>
-      </div>
-      <h3 class="text-base font-bold text-white mb-1">Вход Администратора</h3>
-      <p class="text-xs text-slate-400 mb-4">Вы входите под аккаунтом Создателя. Введите пароль владельца.</p>
-      
-      <input type="password" id="adminMasterPasswordInput" onkeydown="if(event.key==='Enter') window.submitAdminPassword()" placeholder="Введите пароль..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] mb-4">
-      
-      <div class="flex gap-2">
-        <button onclick="window.closeAdminPasswordModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition">Отмена</button>
-        <button onclick="window.submitAdminPassword()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] hover:bg-[#1f70b0] text-xs font-semibold text-white shadow-lg transition">Войти</button>
-      </div>
-    </div>
   </div>
 
   <!-- Banned Account Modal -->
@@ -110,61 +105,126 @@
     </div>
   </div>
 
-  <!-- Main Auth Screen (Login / Register) -->
-  <div id="authScreen" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col justify-between p-6">
-    <div class="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center">
-      <div class="text-center mb-8">
-        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#2481cc] to-sky-400 mx-auto flex items-center justify-center shadow-2xl shadow-sky-500/20 mb-4">
-          <i data-lucide="send" class="w-10 h-10 text-white"></i>
+  <!-- Main Auth Screen (Login / Register via Email + OTP Code) -->
+  <div id="authScreen" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col justify-between p-6 overflow-y-auto">
+    <div class="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center my-auto">
+      <div class="text-center mb-6">
+        <div class="relative w-20 h-20 mx-auto mb-3">
+          <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#2481cc] via-sky-400 to-indigo-500 flex items-center justify-center shadow-2xl shadow-sky-500/30">
+            <i data-lucide="send" class="w-10 h-10 text-white"></i>
+          </div>
+          <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#0e1621] flex items-center justify-center text-[10px] text-white font-bold">✓</span>
         </div>
-        <h1 class="text-2xl font-bold text-white tracking-tight">FPVChat</h1>
-        <p class="text-xs text-slate-400 mt-1">Быстрый мессенджер для друзей</p>
+        <h1 class="text-2xl font-black text-white tracking-tight">FPVChat</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Вход по почте и паролю</p>
       </div>
 
       <!-- Segment Tabs -->
-      <div class="flex bg-[#17212b] p-1 rounded-2xl mb-5 border border-[#242f3d]">
-        <button id="tabBtnLogin" onclick="window.switchAuthTab('login')" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#2481cc] text-white shadow transition">Вход</button>
+      <div class="flex bg-[#17212b] p-1 rounded-2xl mb-4 border border-[#242f3d]">
+        <button id="tabBtnLogin" onclick="window.switchAuthTab('login')" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#2481cc] text-white shadow transition">Войти</button>
         <button id="tabBtnRegister" onclick="window.switchAuthTab('register')" class="flex-1 py-2 text-xs font-semibold rounded-xl text-slate-400 transition">Регистрация</button>
       </div>
 
       <!-- Login View -->
-      <div id="viewLogin" class="space-y-4">
+      <div id="viewLogin" class="space-y-3">
         <div>
-          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Ваш никнейм</label>
-          <input type="text" id="loginUsername" onkeydown="if(event.key==='Enter') window.handleLoginSubmit()" placeholder="Например: alex" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] transition">
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Email или Никнейм</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="loginEmailOrUser" placeholder="timosapletnev@gmail.com или @username" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+          </div>
         </div>
-        <button onclick="window.handleLoginSubmit()" id="btnLoginSubmit" class="w-full py-3.5 rounded-2xl bg-[#2481cc] hover:bg-[#1f70b0] active:scale-98 text-white font-semibold text-sm shadow-xl shadow-sky-500/20 transition flex items-center justify-center gap-2">
-          <span>Продолжить</span>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Пароль</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="password" id="loginPassword" onkeydown="if(event.key==='Enter') window.handleLoginSubmit()" placeholder="Ваш пароль" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+          </div>
+        </div>
+        <button onclick="window.handleLoginSubmit()" id="btnLoginSubmit" class="w-full py-3.5 mt-2 rounded-2xl bg-gradient-to-r from-[#2481cc] to-[#50b5ff] hover:opacity-95 active:scale-98 text-white font-bold text-sm shadow-xl shadow-sky-500/25 transition flex items-center justify-center gap-2">
+          <span>Войти в аккаунт</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
+        <div class="text-center pt-1">
+          <span class="text-[11px] text-slate-400">Нет аккаунта? </span>
+          <button onclick="window.switchAuthTab('register')" class="text-[11px] text-[#50b5ff] font-semibold hover:underline">Зарегистрироваться</button>
+        </div>
       </div>
 
-      <!-- Register View -->
-      <div id="viewRegister" style="display: none;" class="space-y-3.5">
-        <div>
-          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Придумайте никнейм</label>
-          <input type="text" id="regUsername" placeholder="Только буквы и цифры" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] transition">
+      <!-- Register View: Step 1 (Input fields) -->
+      <div id="viewRegister" style="display: none;" class="space-y-3">
+        <div id="regStepFields" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Электронная почта (куда придет код)</label>
+            <div class="relative">
+              <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+              <input type="email" id="regEmail" placeholder="name@gmail.com" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Придумайте никнейм</label>
+            <div class="relative">
+              <i data-lucide="at-sign" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+              <input type="text" id="regUsername" placeholder="alex, dima, nikita" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Пароль</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+              <input type="password" id="regPassword" placeholder="Минимум 4 символа" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Год рождения</label>
+            <div class="relative">
+              <i data-lucide="calendar" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+              <input type="number" id="regBirthYear" onkeydown="if(event.key==='Enter') window.handleSendRegistrationCode()" placeholder="Например: 2005" min="1940" max="2026" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#50b5ff] transition">
+            </div>
+          </div>
+          <button onclick="window.handleSendRegistrationCode()" id="btnSendRegCode" class="w-full py-3.5 mt-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 active:scale-98 text-white font-bold text-sm shadow-xl shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+            <span>Получить код на почту</span>
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
         </div>
-        <div>
-          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Год рождения</label>
-          <input type="number" id="regBirthYear" onkeydown="if(event.key==='Enter') window.handleRegisterSubmit()" placeholder="Например: 2005" min="1940" max="2026" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#2481cc] transition">
+
+        <!-- Register View: Step 2 (Verify OTP Code) -->
+        <div id="regStepOtp" style="display: none;" class="space-y-3">
+          <div class="p-3.5 rounded-2xl bg-[#0e1621] border border-sky-500/30 text-center">
+            <span class="text-xs text-slate-300 block">Мы отправили 6-значный код на почту:</span>
+            <span id="regTargetEmailDisplay" class="text-xs font-bold text-sky-400 block mt-0.5 truncate">mail@gmail.com</span>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Введите 6-значный код</label>
+            <div class="relative">
+              <i data-lucide="key-round" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+              <input type="text" id="regOtpInput" maxlength="6" onkeydown="if(event.key==='Enter') window.handleVerifyRegistrationCode()" placeholder="123456" class="w-full bg-[#17212b] border border-[#242f3d] rounded-2xl pl-10 pr-4 py-3 text-base font-mono tracking-widest text-center text-white focus:outline-none focus:border-[#50b5ff] transition">
+            </div>
+          </div>
+
+          <button onclick="window.handleVerifyRegistrationCode()" id="btnVerifyRegCode" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 active:scale-98 text-white font-bold text-sm shadow-xl shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+            <span>Подтвердить и войти</span>
+            <i data-lucide="check" class="w-4 h-4"></i>
+          </button>
+
+          <div class="flex items-center justify-between pt-1">
+            <button onclick="window.resetRegOtpStep()" class="text-[11px] text-slate-400 hover:text-white transition">Изменить почту</button>
+            <button id="btnResendRegCode" onclick="window.handleResendCode()" class="text-[11px] text-[#50b5ff] font-semibold hover:underline">Отправить код снова</button>
+          </div>
         </div>
-        <button onclick="window.handleRegisterSubmit()" id="btnRegisterSubmit" class="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white font-semibold text-sm shadow-xl shadow-emerald-600/20 transition flex items-center justify-center gap-2">
-          <span>Зарегистрироваться</span>
-          <i data-lucide="check" class="w-4 h-4"></i>
-        </button>
       </div>
     </div>
 
-    <div class="text-center text-[11px] text-slate-600 pb-2 safe-bottom">
-      FPVChat Mobile Edition
+    <div class="text-center text-[11px] text-slate-500 pb-2 safe-bottom">
+      FPVChat • Защищенный мессенджер
     </div>
   </div>
 
   <!-- Incoming Call Modal -->
   <div id="incomingCallModal" style="display: none;" class="fixed inset-0 z-[160] bg-black/90 backdrop-blur-md flex flex-col items-center justify-between p-8">
     <div class="text-center mt-12">
-      <div class="w-24 h-24 rounded-full bg-[#2481cc]/20 border-2 border-[#2481cc] flex items-center justify-center mx-auto mb-4 calling-pulse">
+      <div class="w-24 h-24 rounded-full bg-[#2481cc]/20 border-2 border-[#50b5ff] flex items-center justify-center mx-auto mb-4 calling-pulse">
         <i data-lucide="phone-call" class="w-10 h-10 text-sky-400"></i>
       </div>
       <h3 id="incomingCallerName" class="text-xl font-bold text-white">Входящий вызов...</h3>
@@ -204,10 +264,10 @@
         <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-2xl mb-3">
           <span id="callPeerInitial">?</span>
         </div>
-        <p class="text-xs text-slate-400">Аудиовызов защищен WebRTC</p>
+        <p class="text-xs text-slate-400">Защищенное WebRTC соединение</p>
       </div>
 
-      <video id="localVideo" autoplay playsinline muted style="display: none;" class="absolute bottom-4 right-4 w-28 h-40 object-cover rounded-2xl border-2 border-[#2481cc] shadow-2xl bg-black"></video>
+      <video id="localVideo" autoplay playsinline muted style="display: none;" class="absolute bottom-4 right-4 w-28 h-40 object-cover rounded-2xl border-2 border-[#50b5ff] shadow-2xl bg-black"></video>
     </div>
 
     <div class="flex items-center justify-center gap-6 pb-6 safe-bottom">
@@ -225,13 +285,19 @@
 
   <!-- Main Application Wrapper -->
   <div id="mainApp" class="flex-1 flex flex-col h-full w-full overflow-hidden">
-    <!-- Top Header -->
+    <!-- Top Header in Telegram Style -->
     <header class="h-14 bg-[#17212b] px-4 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
       <div class="flex items-center gap-3">
-        <h1 id="screenHeaderTitle" class="text-base font-bold text-white">Чаты</h1>
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#2481cc] to-[#50b5ff] flex items-center justify-center text-white shadow-sm">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h1 id="screenHeaderTitle" class="text-sm font-bold text-white tracking-wide">FPVChat</h1>
+          <span class="text-[10px] text-emerald-400 block -mt-0.5">● онлайн</span>
+        </div>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="window.openShopModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold hover:bg-amber-500/20 transition">
+        <button onclick="window.openShopModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold hover:bg-amber-500/20 transition">
           <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i>
           <span id="headerStarsCount">0</span>
         </button>
@@ -243,8 +309,8 @@
       <!-- 1. Screen: Contacts -->
       <section id="screenContacts" style="display: none;" class="p-3 space-y-2">
         <div class="flex items-center justify-between px-2 py-1">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Контакты FPVChat</span>
-          <span id="contactsCounterBadge" class="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full font-semibold">0 пользователей</span>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Контакты мессенджера</span>
+          <span id="contactsCounterBadge" class="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full font-semibold">0 контактов</span>
         </div>
         <div id="contactsListContainer" class="space-y-1.5">
           <div class="text-center py-10 text-xs text-slate-500">Загрузка контактов...</div>
@@ -253,46 +319,55 @@
 
       <!-- 2. Screen: Calls -->
       <section id="screenCalls" style="display: none;" class="p-3 space-y-3">
-        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-2 py-1">История звонков</div>
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">Недавние звонки</div>
         <div id="callsHistoryContainer" class="space-y-1">
           <div class="p-6 text-center rounded-2xl bg-[#17212b] border border-[#242f3d]">
             <i data-lucide="phone-call" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
-            <p class="text-xs text-slate-400">Звонков пока не было</p>
-            <p class="text-[10px] text-slate-500 mt-1">Откройте любой контакт или чат, чтобы совершить аудио- или видеозвонок</p>
+            <p class="text-xs text-slate-300 font-semibold">Список звонков пуст</p>
+            <p class="text-[10px] text-slate-500 mt-1">Откройте любой диалог для аудио- или видеосвязи</p>
           </div>
         </div>
       </section>
 
       <!-- 3. Screen: Chats -->
       <section id="screenChats" class="flex flex-col min-h-full">
-        <!-- Direct Quick Actions Bar in Chats Tab -->
-        <div class="p-3 bg-[#17212b] border-b border-[#242f3d] space-y-2.5 shrink-0">
+        <!-- Quick Action Bar & Stories Carousel -->
+        <div class="p-3 bg-[#17212b] border-b border-[#242f3d] space-y-3 shrink-0">
           <div class="flex items-center gap-2">
-            <button onclick="window.openNewChatModal()" class="flex-1 py-2.5 px-3.5 bg-[#2481cc] hover:bg-[#1f70b0] active:scale-98 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md transition">
+            <button onclick="window.openNewChatModal()" class="flex-1 py-2.5 px-3.5 bg-gradient-to-r from-[#2481cc] to-[#50b5ff] hover:opacity-95 active:scale-98 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md transition">
               <i data-lucide="plus-circle" class="w-4 h-4"></i>
-              <span>+ Начать новый чат</span>
+              <span>+ Написать сообщение</span>
             </button>
             <button onclick="window.openNewChatModal()" class="p-2.5 bg-[#0e1621] hover:bg-[#242f3d] rounded-xl border border-[#242f3d] text-slate-300 transition" title="Найти контакт">
               <i data-lucide="search" class="w-4 h-4"></i>
             </button>
           </div>
 
-          <!-- Quick Horizontal Contacts Carousel -->
+          <!-- Telegram-style Stories & Online Circle Carousel -->
           <div>
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
-              <span>Быстрый диалог:</span>
-              <span class="text-sky-400 cursor-pointer" onclick="window.openNewChatModal()">Все контакты →</span>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+              <span class="flex items-center gap-1">
+                <i data-lucide="flame" class="w-3 h-3 text-amber-400"></i> В сети сейчас:
+              </span>
+              <span class="text-sky-400 text-[10px] cursor-pointer hover:underline" onclick="window.openNewChatModal()">Все контакты →</span>
             </div>
-            <div id="quickUsersCarousel" class="flex gap-2 overflow-x-auto py-1">
+            <div id="quickUsersCarousel" class="flex gap-3 overflow-x-auto py-1 scrollbar-none">
               <div class="text-[11px] text-slate-500 py-1">Загрузка участников...</div>
             </div>
+          </div>
+
+          <!-- Telegram-style Folder Tabs -->
+          <div class="flex gap-2 overflow-x-auto pt-1 border-t border-[#242f3d]/60">
+            <button onclick="window.switchChatFilter('all')" id="chatFilterAll" class="px-3 py-1 rounded-full bg-[#2481cc] text-white text-[11px] font-semibold transition shrink-0">Все чаты</button>
+            <button onclick="window.switchChatFilter('direct')" id="chatFilterDirect" class="px-3 py-1 rounded-full bg-[#0e1621] text-slate-400 hover:text-white text-[11px] font-semibold transition shrink-0">Личные</button>
+            <button onclick="window.switchChatFilter('support')" id="chatFilterSupport" class="px-3 py-1 rounded-full bg-[#0e1621] text-slate-400 hover:text-white text-[11px] font-semibold transition shrink-0">Сервис</button>
           </div>
         </div>
 
         <!-- Chat List Items -->
         <div class="divide-y divide-[#17212b] flex-1">
           <!-- Support Chat (Pinned) -->
-          <div onclick="window.openSupportChat()" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/50 cursor-pointer transition">
+          <div id="itemSupportChat" onclick="window.openSupportChat()" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/60 cursor-pointer transition">
             <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-[#2481cc] to-sky-400 flex items-center justify-center text-white shrink-0 shadow">
               <i data-lucide="headset" class="w-6 h-6"></i>
             </div>
@@ -302,17 +377,17 @@
                   <span class="text-xs font-bold text-white truncate">Служба поддержки</span>
                   <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400 shrink-0"></i>
                 </div>
-                <span class="text-[10px] text-slate-500 font-medium">Сервис</span>
+                <span class="text-[10px] text-sky-400 font-bold bg-sky-500/10 px-1.5 py-0.5 rounded">СЕРВИС</span>
               </div>
-              <p class="text-xs text-slate-400 truncate">Официальный информационный канал</p>
+              <p class="text-xs text-slate-400 truncate">Официальный информационный канал FPVChat</p>
             </div>
           </div>
 
           <!-- Dynamic Active Chats List -->
           <div id="dynamicChatsList" class="divide-y divide-[#17212b]">
             <div class="p-8 text-center space-y-3">
-              <p class="text-xs text-slate-500">У вас пока нет активных диалогов</p>
-              <button onclick="window.openNewChatModal()" class="px-4 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl">
+              <p class="text-xs text-slate-400">У вас пока нет активных диалогов</p>
+              <button onclick="window.openNewChatModal()" class="px-4 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl transition">
                 Выбрать контакт для общения
               </button>
             </div>
@@ -321,23 +396,23 @@
       </section>
 
       <!-- FAB: Floating New Chat Button -->
-      <button onclick="window.openNewChatModal()" class="fixed bottom-20 right-5 w-14 h-14 rounded-full bg-[#2481cc] hover:bg-[#1f70b0] active:scale-95 text-white shadow-2xl flex items-center justify-center z-40 transition-transform">
+      <button onclick="window.openNewChatModal()" class="fixed bottom-20 right-5 w-14 h-14 rounded-full bg-gradient-to-tr from-[#2481cc] to-[#50b5ff] hover:opacity-95 active:scale-95 text-white shadow-2xl flex items-center justify-center z-40 transition-transform">
         <i data-lucide="edit-3" class="w-6 h-6"></i>
       </button>
 
       <!-- 4. Screen: Settings -->
       <section id="screenSettings" style="display: none;" class="pb-24">
-        <!-- Profile Card -->
+        <!-- Profile Banner Card -->
         <div class="bg-[#17212b] p-4 border-b border-[#242f3d] flex items-center justify-between mb-3">
           <div class="flex items-center gap-3.5">
             <div onclick="window.openAvatarModal()" class="relative cursor-pointer">
-              <img id="settingsAvatarImg" src="https://placehold.co/100x100/2481cc/ffffff?text=FPV" class="w-16 h-16 rounded-full object-cover border-2 border-[#2481cc]">
+              <img id="settingsAvatarImg" src="https://placehold.co/100x100/2481cc/ffffff?text=U" class="w-16 h-16 rounded-full object-cover border-2 border-[#50b5ff]">
               <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-white text-[10px] shadow">
                 <i data-lucide="camera" class="w-3 h-3"></i>
               </div>
             </div>
             <div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
                 <h3 id="settingsDisplayName" class="text-sm font-bold text-white">Имя</h3>
                 <span id="settingsVerifBadge" style="display: none;">
                   <i data-lucide="badge-check" class="w-4 h-4 text-sky-400 fill-sky-400"></i>
@@ -345,8 +420,9 @@
                 <span id="settingsPremiumBadge" style="display: none;" class="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-[9px] font-bold text-white">★</span>
                 <span id="settingsRoleBadge" style="display: none;" class="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">МОДЕРАТОР</span>
               </div>
-              <span id="settingsUsernameTag" class="text-xs text-slate-400 block">@username</span>
-              <span id="settingsBirthYearTag" class="text-[10px] text-slate-500 block">Год: 2000</span>
+              <span id="settingsUsernameTag" class="text-xs text-sky-400 block font-medium">@username</span>
+              <span id="settingsEmailTag" class="text-[11px] text-slate-400 block">mail@gmail.com</span>
+              <span id="settingsBioTag" class="text-[11px] text-slate-300 italic block mt-0.5">О себе: на связи в FPVChat</span>
             </div>
           </div>
           <button onclick="window.handleSignOut()" class="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition" title="Выйти">
@@ -359,9 +435,9 @@
           <div class="bg-[#17212b] rounded-2xl p-3 border border-[#242f3d]">
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-bold text-white flex items-center gap-1.5">
-                <i data-lucide="gift" class="w-3.5 h-3.5 text-pink-400"></i> Подарки профиля
+                <i data-lucide="gift" class="w-3.5 h-3.5 text-pink-400"></i> Витрина подарков
               </span>
-              <button onclick="window.openShopModal()" class="text-[11px] text-sky-400 font-semibold hover:underline">Магазин</button>
+              <button onclick="window.openShopModal()" class="text-[11px] text-sky-400 font-semibold hover:underline">Магазин звёзд →</button>
             </div>
             <div id="profileGiftsContainer" class="flex gap-2 overflow-x-auto py-1">
               <div class="text-[11px] text-slate-500 py-1">Подарков пока нет</div>
@@ -369,17 +445,30 @@
           </div>
         </div>
 
-        <!-- Settings Action Links -->
+        <!-- Settings Action Links in Telegram Style -->
         <div class="px-3 space-y-3 pb-8">
           <div class="bg-[#17212b] rounded-2xl border border-[#242f3d] divide-y divide-[#242f3d]/60 overflow-hidden">
+            <button onclick="window.openBioModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-semibold text-white block">Изменить «О себе»</span>
+                  <span class="text-[10px] text-slate-400 block">Статус и описание вашего профиля</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
+            </button>
+
             <button onclick="window.requestVerification()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
                   <i data-lucide="badge-check" class="w-4 h-4"></i>
                 </div>
                 <div>
-                  <span class="text-xs font-semibold text-white block">Запрос на галочку</span>
-                  <span class="text-[10px] text-slate-400 block">Получить официальный значок верификации</span>
+                  <span class="text-xs font-semibold text-white block">Запрос на синюю галочку</span>
+                  <span class="text-[10px] text-slate-400 block">Подать заявку на официальную верификацию</span>
                 </div>
               </div>
               <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
@@ -472,7 +561,7 @@
         <button onclick="window.closeDirectChat()" class="p-1 text-slate-400 hover:text-white rounded-full">
           <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </button>
-        <img id="directPeerAvatar" src="https://placehold.co/80x80/2481cc/ffffff?text=U" class="w-9 h-9 rounded-full object-cover">
+        <img id="directPeerAvatar" src="https://placehold.co/80x80/2481cc/ffffff?text=U" class="w-9 h-9 rounded-full object-cover border border-[#2481cc]">
         <div>
           <div class="flex items-center gap-1">
             <span id="directPeerName" class="text-xs font-bold text-white truncate max-w-[120px]">Собеседник</span>
@@ -480,7 +569,7 @@
               <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>
             </span>
           </div>
-          <span id="directPeerStatus" class="text-[10px] text-slate-400 block">в сети</span>
+          <span id="directPeerStatus" class="text-[10px] text-emerald-400 block font-medium">в сети</span>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -497,14 +586,14 @@
       <div class="text-center py-10 text-xs text-slate-500">Начните диалог первым...</div>
     </div>
 
-    <!-- Input Bar -->
+    <!-- Direct Chat Input Bar -->
     <div class="p-2.5 bg-[#17212b] border-t border-[#242f3d] flex items-center gap-2 safe-bottom">
       <label class="p-2 text-slate-400 hover:text-white rounded-full cursor-pointer">
         <i data-lucide="paperclip" class="w-5 h-5"></i>
         <input type="file" id="directFileInput" onchange="window.handleDirectFileUpload(event)" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.zip">
       </label>
-      <input type="text" id="directMessageInput" onkeydown="if(event.key==='Enter') window.sendDirectMessage()" placeholder="Сообщение..." class="flex-1 bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#2481cc]">
-      <button onclick="window.sendDirectMessage()" class="w-10 h-10 rounded-full bg-[#2481cc] hover:bg-[#1f70b0] text-white flex items-center justify-center shrink-0 shadow">
+      <input type="text" id="directMessageInput" onkeydown="if(event.key==='Enter') window.sendDirectMessage()" placeholder="Сообщение..." class="flex-1 bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+      <button onclick="window.sendDirectMessage()" class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#2481cc] to-[#50b5ff] hover:opacity-95 text-white flex items-center justify-center shrink-0 shadow">
         <i data-lucide="send" class="w-4 h-4"></i>
       </button>
     </div>
@@ -525,7 +614,7 @@
             <span class="text-xs font-bold text-white">Служба поддержки</span>
             <i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>
           </div>
-          <span class="text-[10px] text-sky-400 block">официальный сервис</span>
+          <span class="text-[10px] text-sky-400 block font-medium">официальный сервис</span>
         </div>
       </div>
     </header>
@@ -592,7 +681,7 @@
           <label class="text-[11px] font-semibold text-slate-300">Выберите целевого пользователя:</label>
           <span id="adminSelectedUserLabel" class="text-[11px] font-bold text-sky-400">@...</span>
         </div>
-        <select id="adminTargetUser" onchange="window.handleAdminUserSelectChange()" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+        <select id="adminTargetUser" onchange="window.handleAdminUserSelectChange()" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
           <option value="">Загрузка пользователей...</option>
         </select>
       </div>
@@ -605,21 +694,18 @@
           <span class="text-[10px] text-slate-400 block" id="btnAdminGiveStarsDesc">Пополнить баланс</span>
         </button>
 
-        <!-- Hidden for Moderators -->
         <button id="btnAdminGiveVerif" onclick="window.adminGiveVerification()" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
           <i data-lucide="badge-check" class="w-5 h-5 text-sky-400 fill-sky-400 mb-1"></i>
           <span class="text-xs font-bold text-white block">Выдать галочку</span>
           <span class="text-[10px] text-slate-400 block">Верифицировать</span>
         </button>
 
-        <!-- Hidden for Moderators -->
         <button id="btnAdminGivePremium" onclick="window.adminGivePremium()" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
           <i data-lucide="sparkles" class="w-5 h-5 text-rose-400 mb-1"></i>
           <span class="text-xs font-bold text-white block">Выдать Premium</span>
           <span class="text-[10px] text-slate-400 block">Премиум статус</span>
         </button>
 
-        <!-- Hidden for Moderators -->
         <button id="btnAssignMod" onclick="window.adminAssignModerator()" class="p-3 bg-[#17212b] hover:bg-[#242f3d] active:scale-98 rounded-2xl border border-[#242f3d] text-left transition shadow-sm">
           <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 mb-1"></i>
           <span class="text-xs font-bold text-white block">Назначить модератором</span>
@@ -692,7 +778,7 @@
     <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
       <header class="p-4 border-b border-[#242f3d] flex items-center justify-between shrink-0">
         <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i data-lucide="message-square-plus" class="w-4 h-4 text-[#2481cc]"></i>
+          <i data-lucide="message-square-plus" class="w-4 h-4 text-[#50b5ff]"></i>
           <span>Начать диалог</span>
         </h3>
         <button onclick="window.closeNewChatModal()" class="p-1.5 text-slate-400 hover:text-white rounded-full">
@@ -701,7 +787,7 @@
       </header>
 
       <div class="p-3 border-b border-[#242f3d]/60">
-        <input type="text" id="newChatSearchInput" oninput="window.filterNewChatUsers(this.value)" placeholder="Поиск по никнейму или имени..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+        <input type="text" id="newChatSearchInput" oninput="window.filterNewChatUsers(this.value)" placeholder="Поиск по никнейму или email..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
       </div>
 
       <div id="newChatUsersList" class="flex-1 overflow-y-auto p-3 space-y-1.5">
@@ -737,11 +823,23 @@
     </div>
   </div>
 
+  <!-- Bio Modal -->
+  <div id="bioModal" style="display: none;" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+      <h3 class="text-sm font-bold text-white">О себе (Статус)</h3>
+      <input type="text" id="bioTextInput" placeholder="Напишите пару слов о себе..." maxlength="80" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+      <div class="flex gap-2">
+        <button onclick="window.closeBioModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold">Отмена</button>
+        <button onclick="window.saveBioAction()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] text-xs text-white font-semibold">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Avatar Modal -->
   <div id="avatarModal" style="display: none;" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
       <h3 class="text-sm font-bold text-white">Изменить аватарку</h3>
-      <input type="text" id="avatarUrlInput" placeholder="Ссылка на картинку (https://...)" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#2481cc]">
+      <input type="text" id="avatarUrlInput" placeholder="Ссылка на картинку (https://...)" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
       <div class="flex gap-2">
         <button onclick="window.closeAvatarModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold">Отмена</button>
         <button onclick="window.saveAvatarAction()" class="flex-1 py-3 rounded-2xl bg-[#2481cc] text-xs text-white font-semibold">Сохранить</button>
@@ -791,11 +889,28 @@
       console.warn("Firebase init:", e);
     }
 
+    // =========================================================================
+    // НАСТРОЙКИ ПОЧТЫ (EMAILJS)
+    // Зарегистрируйтесь на https://www.emailjs.com/ и вставьте ваши ключи сюда:
+    // =========================================================================
+    const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";   // Вставьте сюда Public Key из EmailJS -> Account -> API Keys
+    const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";   // Вставьте сюда Service ID (например, service_gmail)
+    const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; // Вставьте сюда Template ID (например, template_otp)
+
+    try {
+      if (window.emailjs && EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+        emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+      }
+    } catch(e) {
+      console.warn("EmailJS init:", e);
+    }
+
     // App Constants
     const ADMIN_USERNAME = 'evlan666';
+    const ADMIN_EMAIL = 'timosapletnev@gmail.com';
     const ADMIN_PASS = 'gitlerzzz1488';
 
-    // Gifts catalog: cheap ones <= 150 stars
+    // Gifts catalog
     const GIFTS_CATALOG = [
       { id: 'cake', name: 'Торт', icon: '🎂', price: 50, isCheap: true },
       { id: 'rocket', name: 'Ракета', icon: '🚀', price: 100, isCheap: true },
@@ -809,6 +924,7 @@
     let currentUser = null;
     let currentPeer = null;
     let allUsersList = [];
+    let currentChatFilter = 'all';
     let localStream = null;
     let remoteStream = null;
     let peerConnection = null;
@@ -823,8 +939,52 @@
     let unsubscribeDialogs = null;
     let unsubscribeVerifRequests = null;
 
+    // Registration Pending State with OTP Code
+    let pendingRegData = null;
+    let regResendTimer = null;
+
     // Moderator Daily Limits State
     let modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
+
+    // Telegram-like Sound Generator using Web Audio API
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playMessageSentSound() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } catch(e) {}
+    }
+
+    function playTapSound() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.04);
+      } catch(e) {}
+    }
 
     function getTodayKey() {
       const d = new Date();
@@ -847,11 +1007,11 @@
 
       text.innerText = msg;
       icon.setAttribute('data-lucide', isErr ? 'alert-triangle' : 'info');
-      icon.className = `w-4 h-4 shrink-0 ${isErr ? 'text-red-400' : 'text-[#2481cc]'}`;
+      icon.className = `w-4 h-4 shrink-0 ${isErr ? 'text-red-400' : 'text-[#50b5ff]'}`;
       t.style.display = 'flex';
       if (window.lucide) lucide.createIcons();
 
-      setTimeout(() => { t.style.display = 'none'; }, 3200);
+      setTimeout(() => { t.style.display = 'none'; }, 4500);
     };
 
     function escapeHtml(str) {
@@ -867,13 +1027,17 @@
       if (window.lucide) lucide.createIcons();
     };
 
-    window.closeAdminPasswordModal = () => window.setModalVisible('adminPasswordModal', false);
     window.closeBannedModalAndExit = () => {
       window.setModalVisible('bannedModal', false);
       window.handleSignOut();
     };
     window.closeAdminPanel = () => window.setModalVisible('adminPanelModal', false);
     window.closeShopModal = () => window.setModalVisible('shopModal', false);
+    window.closeBioModal = () => window.setModalVisible('bioModal', false);
+    window.openBioModal = () => {
+      document.getElementById('bioTextInput').value = currentUser?.bio || '';
+      window.setModalVisible('bioModal', true);
+    };
     window.closeAvatarModal = () => window.setModalVisible('avatarModal', false);
     window.closeNewChatModal = () => window.setModalVisible('newChatModal', false);
     window.closeDirectChat = () => {
@@ -889,8 +1053,9 @@
       window.showToast("Звонок продолжается в фоне");
     };
 
-    // Tab Switching
+    // Tab Switching for Auth
     window.switchAuthTab = function(tab) {
+      playTapSound();
       const tLog = document.getElementById('tabBtnLogin');
       const tReg = document.getElementById('tabBtnRegister');
       const vLog = document.getElementById('viewLogin');
@@ -910,99 +1075,128 @@
       if (window.lucide) lucide.createIcons();
     };
 
+    // Login with Email or Username + Password
     window.handleLoginSubmit = async function() {
-      const usernameInput = document.getElementById('loginUsername');
-      const raw = (usernameInput?.value || '').trim();
-      if (!raw) return window.showToast("Введите ваш никнейм", true);
+      playTapSound();
+      const emailOrUserInput = document.getElementById('loginEmailOrUser');
+      const passInput = document.getElementById('loginPassword');
+      const queryKey = (emailOrUserInput?.value || '').trim().toLowerCase();
+      const pass = (passInput?.value || '').trim();
 
-      const username = raw.toLowerCase();
+      if (!queryKey) return window.showToast("Введите ваш Email или никнейм", true);
+      if (!pass) return window.showToast("Введите пароль", true);
 
-      if (username === ADMIN_USERNAME) {
-        document.getElementById('adminMasterPasswordInput').value = '';
-        window.setModalVisible('adminPasswordModal', true);
+      // Check if logging in as Primary Owner (Creator)
+      if ((queryKey === ADMIN_USERNAME.toLowerCase() || queryKey === ADMIN_EMAIL.toLowerCase()) && pass === ADMIN_PASS) {
+        await performCreatorLogin();
         return;
       }
 
-      await performLogin(username);
-    };
-
-    window.submitAdminPassword = async function() {
-      const pass = document.getElementById('adminMasterPasswordInput').value;
-      if (pass !== ADMIN_PASS) {
-        return window.showToast("Неверный пароль владельца!", true);
-      }
-      window.closeAdminPasswordModal();
-      await performLogin(ADMIN_USERNAME, true);
-    };
-
-    async function performLogin(username, isOwnerAuth = false) {
       const btn = document.getElementById('btnLoginSubmit');
-      if (btn) { btn.disabled = true; btn.innerText = "Подключение..."; }
+      if (btn) { btn.disabled = true; btn.innerText = "Проверка..."; }
 
       try {
-        const userRef = doc(db, 'fpv_users', username);
-        const snap = await getDoc(userRef);
+        let targetDoc = null;
+        // 1. Direct try by username
+        const directSnap = await getDoc(doc(db, 'fpv_users', queryKey));
+        if (directSnap.exists()) {
+          targetDoc = directSnap.data();
+        } else {
+          // 2. Query by email
+          const allDocs = await getDocs(collection(db, 'fpv_users'));
+          allDocs.forEach(d => {
+            const u = d.data();
+            if ((u.email || '').toLowerCase() === queryKey) {
+              targetDoc = u;
+            }
+          });
+        }
 
-        if (!snap.exists()) {
-          if (isOwnerAuth) {
-            const ownerData = {
-              username: ADMIN_USERNAME,
-              displayName: "Создатель",
-              birthYear: 2000,
-              role: 'owner',
-              isVerified: true,
-              isPremium: true,
-              stars: 99999,
-              gifts: ['crown', 'trophy'],
-              avatarUrl: 'https://placehold.co/120x120/2481cc/ffffff?text=OWNER',
-              isOnline: true,
-              createdAt: Date.now()
-            };
-            await setDoc(userRef, ownerData);
-            initUserSession(ownerData);
-            return;
-          }
+        if (!targetDoc) {
           window.showToast("Пользователь не найден. Зарегистрируйтесь!", true);
           window.switchAuthTab('register');
           return;
         }
 
-        const data = snap.data();
-        if (data.isBanned) {
-          document.getElementById('bannedReasonText').innerText = data.banReason || 'Нарушение правил';
+        // Check password
+        if (targetDoc.password && targetDoc.password !== pass) {
+          window.showToast("Неверный пароль!", true);
+          return;
+        }
+
+        // Check ban
+        if (targetDoc.isBanned) {
+          document.getElementById('bannedReasonText').innerText = targetDoc.banReason || 'Нарушение правил';
           window.setModalVisible('bannedModal', true);
           return;
         }
 
-        if (isOwnerAuth || username === ADMIN_USERNAME) {
-          data.role = 'owner';
-        }
-
-        await updateDoc(userRef, { isOnline: true });
-        initUserSession(data);
+        await updateDoc(doc(db, 'fpv_users', targetDoc.username), { isOnline: true });
+        initUserSession(targetDoc);
+        window.showToast(`С возвращением, ${targetDoc.displayName || targetDoc.username}!`);
       } catch(err) {
         window.showToast("Ошибка входа: " + err.message, true);
       } finally {
-        if (btn) { btn.disabled = false; btn.innerText = "Продолжить"; }
+        if (btn) { btn.disabled = false; btn.innerText = "Войти в аккаунт"; }
       }
+    };
+
+    async function performCreatorLogin() {
+      const userRef = doc(db, 'fpv_users', ADMIN_USERNAME);
+      const snap = await getDoc(userRef);
+
+      const ownerData = {
+        username: ADMIN_USERNAME,
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASS,
+        displayName: "Создатель",
+        bio: "Создатель и владелец FPVChat",
+        birthYear: 2000,
+        role: 'owner',
+        isVerified: true,
+        isPremium: true,
+        stars: 99999,
+        gifts: ['crown', 'trophy'],
+        avatarUrl: 'https://placehold.co/120x120/2481cc/ffffff?text=OWNER',
+        isOnline: true,
+        createdAt: snap.exists() ? (snap.data().createdAt || Date.now()) : Date.now()
+      };
+
+      await setDoc(userRef, ownerData, { merge: true });
+      initUserSession(ownerData);
+      window.showToast("Вход Создателя выполнен успешно!");
     }
 
-    window.handleRegisterSubmit = async function() {
+    // Step 1: Send 6-Digit OTP Code to Email
+    window.handleSendRegistrationCode = async function() {
+      playTapSound();
+      const emailInput = document.getElementById('regEmail');
       const nameInput = document.getElementById('regUsername');
+      const passInput = document.getElementById('regPassword');
       const yearInput = document.getElementById('regBirthYear');
+
+      const email = (emailInput?.value || '').trim().toLowerCase();
       const rawName = (nameInput?.value || '').trim();
+      const pass = (passInput?.value || '').trim();
       const birthYear = parseInt(yearInput?.value, 10);
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) return window.showToast("Введите корректный Email", true);
       if (!rawName) return window.showToast("Придумайте никнейм", true);
+      if (pass.length < 4) return window.showToast("Пароль должен быть не менее 4 символов", true);
       if (!birthYear || birthYear < 1940 || birthYear > 2026) return window.showToast("Укажите корректный год рождения", true);
 
-      const username = rawName.toLowerCase();
-      if (username === ADMIN_USERNAME) return window.showToast("Этот никнейм зарезервирован!", true);
+      const username = rawName.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      if (!username) return window.showToast("Никнейм должен содержать латинские буквы или цифры", true);
+      if (username === ADMIN_USERNAME.toLowerCase() || email === ADMIN_EMAIL.toLowerCase()) {
+        return window.showToast("Эти данные зарезервированы для Создателя! Войдите во вкладке «Войти».", true);
+      }
 
-      const btn = document.getElementById('btnRegisterSubmit');
-      if (btn) { btn.disabled = true; btn.innerText = "Регистрация..."; }
+      const btn = document.getElementById('btnSendRegCode');
+      if (btn) { btn.disabled = true; btn.innerText = "Отправка кода..."; }
 
       try {
+        // Check if username already exists
         const userRef = doc(db, 'fpv_users', username);
         const snap = await getDoc(userRef);
         if (snap.exists()) {
@@ -1010,27 +1204,163 @@
           return;
         }
 
-        const newUser = {
-          username: username,
+        // Check if email already exists
+        const allDocs = await getDocs(collection(db, 'fpv_users'));
+        let emailExists = false;
+        allDocs.forEach(d => {
+          if ((d.data().email || '').toLowerCase() === email) emailExists = true;
+        });
+
+        if (emailExists) {
+          window.showToast("Этот Email уже зарегистрирован! Войдите по нему.", true);
+          window.switchAuthTab('login');
+          return;
+        }
+
+        // Generate 6-digit random code
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        pendingRegData = {
+          email,
+          username,
           displayName: rawName,
-          birthYear: birthYear,
+          password: pass,
+          birthYear,
+          code,
+          expiresAt: Date.now() + 10 * 60 * 1000
+        };
+
+        // Check if EmailJS keys are configured
+        const isEmailConfigured = EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY";
+
+        if (isEmailConfigured && window.emailjs) {
+          try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+              to_email: email,
+              user_name: rawName,
+              verification_code: code,
+              app_name: "FPVChat"
+            });
+            window.showToast(`Код отправлен на почту ${email}! Проверьте папку Входящие и Спам`);
+          } catch(emailErr) {
+            console.error("EmailJS send failed:", emailErr);
+            window.showToast(`Ошибка отправки письма: ${emailErr.text || emailErr.message || 'Проверьте ключи EmailJS'}. Код для входа: ${code}`, true);
+          }
+        } else {
+          // If keys are not configured yet, notify user and provide test code
+          window.showToast(`Ключи EmailJS не настроены в коде! Для проверки используйте код: ${code}`);
+        }
+
+        // Switch to OTP Code step
+        document.getElementById('regStepFields').style.display = 'none';
+        document.getElementById('regStepOtp').style.display = 'block';
+        document.getElementById('regTargetEmailDisplay').innerText = email;
+        document.getElementById('regOtpInput').value = '';
+
+        startResendTimer();
+      } catch(err) {
+        window.showToast("Ошибка: " + err.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Получить код на почту"; }
+      }
+    };
+
+    function startResendTimer() {
+      const btn = document.getElementById('btnResendRegCode');
+      if (!btn) return;
+      let left = 45;
+      btn.disabled = true;
+      btn.innerText = `Повтор через ${left}с`;
+      if (regResendTimer) clearInterval(regResendTimer);
+      regResendTimer = setInterval(() => {
+        left--;
+        if (left <= 0) {
+          clearInterval(regResendTimer);
+          btn.disabled = false;
+          btn.innerText = "Отправить код снова";
+        } else {
+          btn.innerText = `Повтор через ${left}с`;
+        }
+      }, 1000);
+    }
+
+    window.handleResendCode = async function() {
+      if (!pendingRegData) return;
+      pendingRegData.code = String(Math.floor(100000 + Math.random() * 900000));
+      
+      const isEmailConfigured = EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY";
+      if (isEmailConfigured && window.emailjs) {
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            to_email: pendingRegData.email,
+            user_name: pendingRegData.displayName,
+            verification_code: pendingRegData.code,
+            app_name: "FPVChat"
+          });
+          window.showToast(`Новый код отправлен на ${pendingRegData.email}!`);
+        } catch(e) {
+          window.showToast(`Ошибка отправки. Новый код для теста: ${pendingRegData.code}`);
+        }
+      } else {
+        window.showToast(`Новый код (тестовый режим): ${pendingRegData.code}`);
+      }
+      startResendTimer();
+    };
+
+    window.resetRegOtpStep = function() {
+      if (regResendTimer) clearInterval(regResendTimer);
+      document.getElementById('regStepOtp').style.display = 'none';
+      document.getElementById('regStepFields').style.display = 'block';
+    };
+
+    // Step 2: Verify 6-digit OTP and complete registration
+    window.handleVerifyRegistrationCode = async function() {
+      playTapSound();
+      const otpInput = document.getElementById('regOtpInput');
+      const enteredCode = (otpInput?.value || '').trim();
+
+      if (!pendingRegData) {
+        window.showToast("Данные регистрации устарели, начните заново", true);
+        window.resetRegOtpStep();
+        return;
+      }
+
+      if (!enteredCode || enteredCode.length !== 6) {
+        return window.showToast("Введите 6-значный код из письма!", true);
+      }
+
+      if (enteredCode !== pendingRegData.code) {
+        return window.showToast("Неверный код подтверждения!", true);
+      }
+
+      const btn = document.getElementById('btnVerifyRegCode');
+      if (btn) { btn.disabled = true; btn.innerText = "Создание профиля..."; }
+
+      try {
+        const newUser = {
+          username: pendingRegData.username,
+          email: pendingRegData.email,
+          password: pendingRegData.password,
+          displayName: pendingRegData.displayName,
+          bio: "Пользователь FPVChat",
+          birthYear: pendingRegData.birthYear,
           role: 'user',
           isVerified: false,
           isPremium: false,
           stars: 100,
           gifts: [],
-          avatarUrl: `https://placehold.co/100x100/2481cc/ffffff?text=${encodeURIComponent(rawName.slice(0, 2).toUpperCase())}`,
+          avatarUrl: `https://placehold.co/100x100/2481cc/ffffff?text=${encodeURIComponent(pendingRegData.displayName.slice(0, 2).toUpperCase())}`,
           isOnline: true,
           createdAt: Date.now()
         };
 
-        await setDoc(userRef, newUser);
+        await setDoc(doc(db, 'fpv_users', pendingRegData.username), newUser);
+        pendingRegData = null;
         initUserSession(newUser);
-        window.showToast("Регистрация успешна! Добро пожаловать!");
+        window.showToast("Почта подтверждена! Добро пожаловать в FPVChat!");
       } catch(err) {
-        window.showToast("Ошибка регистрации: " + err.message, true);
+        window.showToast("Ошибка создания аккаунта: " + err.message, true);
       } finally {
-        if (btn) { btn.disabled = false; btn.innerText = "Зарегистрироваться"; }
+        if (btn) { btn.disabled = false; btn.innerText = "Подтвердить и войти"; }
       }
     };
 
@@ -1062,6 +1392,7 @@
     }
 
     window.handleSignOut = async function() {
+      playTapSound();
       if (currentUser && db) {
         try {
           await updateDoc(doc(db, 'fpv_users', currentUser.username), { isOnline: false });
@@ -1070,6 +1401,7 @@
       currentUser = null;
       window.safeStorage.removeItem('fpv_logged_user');
       document.getElementById('authScreen').style.display = 'flex';
+      window.resetRegOtpStep();
       window.switchAuthTab('login');
     };
 
@@ -1080,7 +1412,8 @@
       
       document.getElementById('settingsDisplayName').innerText = currentUser.displayName || currentUser.username;
       document.getElementById('settingsUsernameTag').innerText = `@${currentUser.username}`;
-      document.getElementById('settingsBirthYearTag').innerText = `Год: ${currentUser.birthYear || '—'}`;
+      document.getElementById('settingsEmailTag').innerText = currentUser.email || 'Email не указан';
+      document.getElementById('settingsBioTag').innerText = `О себе: ${currentUser.bio || 'на связи в FPVChat'}`;
       document.getElementById('settingsAvatarImg').src = currentUser.avatarUrl || 'https://placehold.co/100x100/2481cc/ffffff?text=U';
 
       document.getElementById('settingsVerifBadge').style.display = currentUser.isVerified ? 'inline-block' : 'none';
@@ -1092,7 +1425,7 @@
       }
 
       // Admin panel button in settings appears ONLY for Owner or Moderator!
-      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME;
+      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL;
       const isMod = currentUser.role === 'moderator';
       const adminBtn = document.getElementById('btnSettingsAdminPanel');
       if (adminBtn) {
@@ -1119,8 +1452,9 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Switch Main Tabs
+    // Switch Main Navigation Tabs
     window.switchMainTab = function(tab) {
+      playTapSound();
       const tabs = ['contacts', 'calls', 'chats', 'settings'];
       tabs.forEach(t => {
         const sec = document.getElementById(`screen${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -1141,6 +1475,45 @@
         titleEl.innerText = titles[tab] || 'Чаты';
       }
       if (window.lucide) lucide.createIcons();
+    };
+
+    // Chat Folder Filter
+    window.switchChatFilter = function(filter) {
+      playTapSound();
+      currentChatFilter = filter;
+      const filters = ['all', 'direct', 'support'];
+      filters.forEach(f => {
+        const btn = document.getElementById(`chatFilter${f.charAt(0).toUpperCase() + f.slice(1)}`);
+        if (btn) {
+          if (f === filter) {
+            btn.className = "px-3 py-1 rounded-full bg-[#2481cc] text-white text-[11px] font-semibold transition shrink-0";
+          } else {
+            btn.className = "px-3 py-1 rounded-full bg-[#0e1621] text-slate-400 hover:text-white text-[11px] font-semibold transition shrink-0";
+          }
+        }
+      });
+
+      const supportItem = document.getElementById('itemSupportChat');
+      const dynamicList = document.getElementById('dynamicChatsList');
+      if (supportItem) {
+        supportItem.style.display = (filter === 'direct') ? 'none' : 'flex';
+      }
+      if (dynamicList) {
+        dynamicList.style.display = (filter === 'support') ? 'none' : 'block';
+      }
+    };
+
+    // Bio Saving
+    window.saveBioAction = async function() {
+      const bio = document.getElementById('bioTextInput').value.trim();
+      if (!currentUser) return;
+      try {
+        await updateDoc(doc(db, 'fpv_users', currentUser.username), { bio: bio });
+        window.closeBioModal();
+        window.showToast("Статус обновлен!");
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
     };
 
     // Central Users Realtime Listener
@@ -1187,7 +1560,7 @@
                 ${u.isPremium ? '<span class="px-1 text-[9px] rounded bg-amber-500 text-black font-bold">★</span>' : ''}
                 ${u.role === 'moderator' ? '<span class="px-1 text-[8px] rounded bg-emerald-500/20 text-emerald-400 font-bold">МОД</span>' : ''}
               </div>
-              <span class="text-[10px] text-slate-400">@${escapeHtml(u.username)}</span>
+              <span class="text-[10px] text-slate-400">@${escapeHtml(u.username)} • ${escapeHtml(u.email || '')}</span>
             </div>
           </div>
           <button class="p-2 text-slate-400 hover:text-white rounded-full">
@@ -1199,6 +1572,7 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    // Telegram-style Stories & Online Circle Carousel
     function renderQuickUsersCarousel() {
       const carousel = document.getElementById('quickUsersCarousel');
       if (!carousel || !currentUser) return;
@@ -1210,18 +1584,19 @@
       }
 
       carousel.innerHTML = otherUsers.map(u => `
-        <div onclick="window.openDirectChat('${u.username}')" class="flex flex-col items-center gap-1 cursor-pointer shrink-0 p-1.5 rounded-xl hover:bg-[#242f3d]/40 transition" title="@${escapeHtml(u.username)}">
-          <div class="relative">
-            <img src="${u.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-11 h-11 rounded-full object-cover border border-[#242f3d]">
-            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-emerald-500' : 'bg-slate-500'} border-2 border-[#17212b]"></span>
+        <div onclick="window.openDirectChat('${u.username}')" class="flex flex-col items-center gap-1.5 cursor-pointer shrink-0 p-1 rounded-2xl hover:bg-[#242f3d]/40 transition group" title="@${escapeHtml(u.username)}">
+          <div class="relative ${u.isOnline ? 'story-border' : ''}">
+            <img src="${u.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-12 h-12 rounded-full object-cover border-2 border-[#17212b]">
+            <span class="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full ${u.isOnline ? 'bg-emerald-500' : 'bg-slate-500'} border-2 border-[#17212b]"></span>
           </div>
-          <span class="text-[10px] text-slate-300 font-medium max-w-[55px] truncate text-center">${escapeHtml(u.displayName || u.username)}</span>
+          <span class="text-[10px] text-slate-300 font-medium max-w-[60px] truncate text-center">${escapeHtml(u.displayName || u.username)}</span>
         </div>
       `).join('');
     }
 
     // New Chat Modal Handling
     window.openNewChatModal = function() {
+      playTapSound();
       document.getElementById('newChatSearchInput').value = '';
       window.setModalVisible('newChatModal', true);
       renderNewChatModalList();
@@ -1239,6 +1614,7 @@
       if (query) {
         filtered = filtered.filter(u => 
           (u.username || '').toLowerCase().includes(query) || 
+          (u.email || '').toLowerCase().includes(query) || 
           (u.displayName || '').toLowerCase().includes(query)
         );
       }
@@ -1261,10 +1637,10 @@
                 ${u.isVerified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>' : ''}
                 ${u.isPremium ? '<span class="px-1 text-[9px] rounded bg-amber-500 text-black font-bold">★</span>' : ''}
               </div>
-              <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(u.username)}</span>
+              <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(u.username)} • ${escapeHtml(u.email || '')}</span>
             </div>
           </div>
-          <button class="px-3 py-1.5 rounded-xl bg-[#2481cc] hover:bg-[#1f70b0] text-white text-xs font-semibold flex items-center gap-1 shadow">
+          <button class="px-3 py-1.5 rounded-xl bg-[#2481cc] hover:bg-[#50b5ff] text-white text-xs font-semibold flex items-center gap-1 shadow">
             <span>Написать</span>
             <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
           </button>
@@ -1277,6 +1653,7 @@
     // Direct Chat Messaging
     window.openDirectChat = async function(peerUsername) {
       if (!db || !currentUser) return;
+      playTapSound();
       try {
         let peerData = allUsersList.find(u => u.username === peerUsername);
         if (!peerData) {
@@ -1318,7 +1695,7 @@
         msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
         if (msgs.length === 0) {
-          box.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">Сообщений пока нет. Скажите привет!</div>';
+          box.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">Сообщений пока нет. Напишите первым!</div>';
           return;
         }
 
@@ -1337,12 +1714,36 @@
             }
           }
 
+          const reactions = m.reactions || {};
+          let reactionsHtml = '';
+          if (Object.keys(reactions).length > 0) {
+            reactionsHtml = `
+              <div class="flex gap-1 mt-1 flex-wrap">
+                ${Object.entries(reactions).map(([emo, count]) => `
+                  <span class="px-1.5 py-0.5 rounded-full bg-black/30 text-[10px] flex items-center gap-0.5">
+                    ${emo} <span class="font-bold text-[9px]">${count}</span>
+                  </span>
+                `).join('')}
+              </div>
+            `;
+          }
+
           return `
-            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-              <div class="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md ${isMe ? 'bg-[#2481cc] text-white rounded-br-xs' : 'bg-[#17212b] text-slate-100 rounded-bl-xs border border-[#242f3d]'}">
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} group">
+              <div class="max-w-[82%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md ${isMe ? 'bg-gradient-to-r from-[#2481cc] to-[#50b5ff] text-white rounded-br-xs' : 'bg-[#17212b] text-slate-100 rounded-bl-xs border border-[#242f3d]'}">
                 ${mediaHtml}
                 ${m.text ? `<p class="leading-relaxed break-words">${escapeHtml(m.text)}</p>` : ''}
-                <span class="text-[9px] block text-right mt-1 opacity-70">${time}</span>
+                ${reactionsHtml}
+                <div class="flex items-center justify-end gap-1 mt-1 opacity-75 text-[9px]">
+                  <span>${time}</span>
+                  ${isMe ? '<span class="font-bold">✓✓</span>' : ''}
+                </div>
+              </div>
+              <div class="opacity-0 group-hover:opacity-100 transition flex gap-1 mt-0.5 px-1">
+                <button onclick="window.reactToMessage('${m.id}', '❤️')" class="text-[11px] hover:scale-125 transition">❤️</button>
+                <button onclick="window.reactToMessage('${m.id}', '👍')" class="text-[11px] hover:scale-125 transition">👍</button>
+                <button onclick="window.reactToMessage('${m.id}', '🔥')" class="text-[11px] hover:scale-125 transition">🔥</button>
+                <button onclick="window.reactToMessage('${m.id}', '😂')" class="text-[11px] hover:scale-125 transition">😂</button>
               </div>
             </div>
           `;
@@ -1353,12 +1754,28 @@
       }, (err) => console.warn("Messages sync error:", err));
     }
 
+    window.reactToMessage = async function(msgId, emoji) {
+      if (!currentUser || !currentPeer) return;
+      playTapSound();
+      const roomId = getRoomId(currentUser.username, currentPeer.username);
+      const msgRef = doc(db, 'fpv_direct_chats', roomId, 'messages', msgId);
+      try {
+        const snap = await getDoc(msgRef);
+        if (snap.exists()) {
+          const currentReactions = snap.data().reactions || {};
+          currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
+          await updateDoc(msgRef, { reactions: currentReactions });
+        }
+      } catch(e) {}
+    };
+
     window.sendDirectMessage = async function() {
       const inp = document.getElementById('directMessageInput');
       const text = (inp?.value || '').trim();
       if (!text || !currentUser || !currentPeer) return;
 
       inp.value = '';
+      playMessageSentSound();
       await pushMessageRecord({ text });
     };
 
@@ -1372,6 +1789,7 @@
 
       const reader = new FileReader();
       reader.onload = async function() {
+        playMessageSentSound();
         await pushMessageRecord({
           text: '',
           mediaUrl: reader.result,
@@ -1388,6 +1806,7 @@
       const msgData = {
         sender: currentUser.username,
         createdAt: Date.now(),
+        reactions: {},
         ...payload
       };
 
@@ -1434,7 +1853,7 @@
         if (items.length === 0) {
           box.innerHTML = `
             <div class="p-8 text-center space-y-3">
-              <p class="text-xs text-slate-500">У вас пока нет активных диалогов</p>
+              <p class="text-xs text-slate-400">У вас пока нет активных диалогов</p>
               <button onclick="window.openNewChatModal()" class="px-4 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl">
                 Выбрать контакт для общения
               </button>
@@ -1444,8 +1863,8 @@
         }
 
         box.innerHTML = items.map(chat => `
-          <div onclick="window.openDirectChat('${chat.peer}')" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/50 cursor-pointer transition">
-            <img src="${chat.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U'}" class="w-12 h-12 rounded-full object-cover shrink-0">
+          <div onclick="window.openDirectChat('${chat.peer}')" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/60 cursor-pointer transition">
+            <img src="${chat.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U'}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-[#242f3d]">
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between mb-0.5">
                 <div class="flex items-center gap-1.5">
@@ -1473,6 +1892,7 @@
 
     window.startCall = async function(type = 'audio') {
       if (!currentUser || !currentPeer) return;
+      playTapSound();
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -1682,17 +2102,17 @@
       }
     };
 
-    // Fully Functional Admin Panel Logic
+    // Admin Panel Logic with Moderator limits
     window.openAdminPanel = async function() {
       if (!currentUser) return;
-      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME;
+      playTapSound();
+      const isOwner = currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL;
       const isMod = currentUser.role === 'moderator';
 
       if (!isOwner && !isMod) {
         return window.showToast("У вас нет доступа к Панели управления!", true);
       }
 
-      // Fetch or init daily limits if moderator
       if (isMod) {
         await fetchModDailyLimits();
       }
@@ -1700,19 +2120,17 @@
       document.getElementById('adminPanelTitle').innerText = isOwner ? "Панель Создателя" : "Панель Модератора";
       document.getElementById('adminPanelSubtitle').innerText = isOwner ? "Полный неограниченный доступ Создателя" : "Урезанная панель (лимиты 500★ и 2 подарка/день)";
 
-      // Moderator Limit Banner
       const banner = document.getElementById('modLimitBanner');
       if (banner) {
         banner.style.display = isMod ? 'flex' : 'none';
         updateModLimitDisplay();
       }
 
-      // Hide restricted buttons for moderator
+      // Hide restricted controls for moderator
       document.getElementById('btnAssignMod').style.display = isOwner ? 'block' : 'none';
       document.getElementById('btnAdminGiveVerif').style.display = isOwner ? 'block' : 'none';
       document.getElementById('btnAdminGivePremium').style.display = isOwner ? 'block' : 'none';
 
-      // Hide tabs for moderator: NO bans, NO verification requests tab
       document.getElementById('tabAdminBans').style.display = isOwner ? 'flex' : 'none';
       document.getElementById('tabAdminRequests').style.display = isOwner ? 'flex' : 'none';
 
@@ -1737,7 +2155,6 @@
           modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
         }
       } catch(e) {
-        console.warn("fetch limits error:", e);
         modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
       }
     }
@@ -1766,15 +2183,13 @@
           giftsGiven: modDailyUsage.giftsGiven,
           updatedAt: Date.now()
         }, { merge: true });
-      } catch(e) {
-        console.warn("record usage error:", e);
-      }
+      } catch(e) {}
       updateModLimitDisplay();
     }
 
     window.switchAdminTab = function(tab) {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
-      // Disallow bans and requests tabs for moderators
+      playTapSound();
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (!isOwner && (tab === 'bans' || tab === 'requests')) {
         window.showToast("Этот раздел доступен только Создателю!", true);
         tab = 'actions';
@@ -1801,7 +2216,7 @@
       const directCards = document.getElementById('adminDirectUserCards');
       if (!select) return;
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
 
       if (allUsersList.length === 0) {
         select.innerHTML = '<option value="">Нет зарегистрированных пользователей</option>';
@@ -1825,13 +2240,11 @@
       select.innerHTML = opts;
       if (banSelect) banSelect.innerHTML = banOpts;
 
-      // Auto-select first or current
       if (!select.value && allUsersList.length > 0) {
         select.value = allUsersList[0].username;
         window.handleAdminUserSelectChange();
       }
 
-      // Direct Action Cards
       if (directCards) {
         directCards.innerHTML = allUsersList.map(u => {
           let buttonsHtml = `<button onclick="window.adminSelectAndAward('${u.username}', 'stars', 500)" class="px-2 py-1 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-[10px] font-bold">+500★</button>`;
@@ -1879,7 +2292,7 @@
       const target = document.getElementById('adminTargetUser').value;
       if (!target) return window.showToast("Выберите пользователя из списка!", true);
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
 
       if (!isOwner) {
         const used = modDailyUsage.starsGiven || 0;
@@ -1905,9 +2318,8 @@
       }
     };
 
-    // Moderators CANNOT give verification
     window.adminGiveVerification = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (!isOwner) {
         return window.showToast("Модераторы не могут выдавать галочки!", true);
       }
@@ -1923,9 +2335,8 @@
       }
     };
 
-    // Moderators CANNOT give premium
     window.adminGivePremium = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (!isOwner) {
         return window.showToast("Модераторы не могут выдавать Premium!", true);
       }
@@ -1941,9 +2352,8 @@
       }
     };
 
-    // Moderators CANNOT assign other moderators
     window.adminAssignModerator = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (!isOwner) {
         return window.showToast("Только Создатель может назначать модераторов!", true);
       }
@@ -1965,7 +2375,7 @@
       const note = document.getElementById('adminGiftsTypeNote');
       if (!box) return;
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (note) {
         note.innerText = isOwner ? 'Все подарки (безлимит)' : 'До 2 недорогих подарков в день (<=150★)';
       }
@@ -1982,12 +2392,11 @@
       }).join('');
     }
 
-    // Moderator: Max 2 cheap gifts per day!
     window.adminSendGift = async function(giftId) {
       const target = document.getElementById('adminTargetUser').value;
       if (!target) return window.showToast("Выберите пользователя из списка!", true);
 
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       const gift = GIFTS_CATALOG.find(x => x.id === giftId);
 
       if (!isOwner) {
@@ -2019,7 +2428,7 @@
 
     // Bans Implementation (OWNER ONLY)
     window.banUserAction = async function() {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (!isOwner) {
         return window.showToast("Модераторы не имеют права блокировать пользователей!", true);
       }
@@ -2044,7 +2453,7 @@
     };
 
     window.unbanUserAction = async function(target) {
-      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
       if (!isOwner) {
         return window.showToast("Модераторы не имеют права разблокировать пользователей!", true);
       }
@@ -2091,6 +2500,7 @@
     // Verification Requests Queue (Strictly Owner Only)
     window.requestVerification = async function() {
       if (!currentUser || !db) return;
+      playTapSound();
       try {
         const reqRef = doc(db, 'fpv_verif_requests', currentUser.username);
         await setDoc(reqRef, {
@@ -2157,7 +2567,8 @@
     }
 
     window.adminApproveVerification = async function(targetUsername) {
-      if (!currentUser || (currentUser.role !== 'owner' && currentUser.username !== ADMIN_USERNAME)) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      if (!isOwner) {
         return window.showToast("Только Создатель может одобрять запросы на галочку!", true);
       }
       try {
@@ -2170,7 +2581,8 @@
     };
 
     window.adminRejectVerification = async function(targetUsername) {
-      if (!currentUser || (currentUser.role !== 'owner' && currentUser.username !== ADMIN_USERNAME)) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME || currentUser.email === ADMIN_EMAIL);
+      if (!isOwner) {
         return window.showToast("Только Создатель может отклонять запросы!", true);
       }
       try {
@@ -2183,6 +2595,7 @@
 
     // Subpages Settings Content
     window.openSettingsSubpage = function(sub) {
+      playTapSound();
       const t = document.getElementById('settingsSubpageTitle');
       const c = document.getElementById('settingsSubpageContent');
       if (!t || !c) return;
@@ -2196,7 +2609,7 @@
       t.innerText = titles[sub] || "Настройки";
       c.innerHTML = `
         <div class="bg-[#17212b] rounded-2xl border border-[#242f3d] p-4 text-xs text-slate-300 leading-relaxed shadow-sm">
-          Параметры раздела <b>${titles[sub]}</b> оптимизированы для мобильного приложения FPVChat.
+          Параметры раздела <b>${titles[sub]}</b> настроены для комфортной работы FPVChat на мобильных устройствах.
         </div>
         <button onclick="window.showToast('Настройки сохранены')" class="w-full py-3 rounded-2xl bg-[#2481cc] text-white text-xs font-semibold shadow">Сохранить</button>
       `;
@@ -2206,6 +2619,7 @@
 
     // Shop Catalog
     window.openShopModal = function() {
+      playTapSound();
       const box = document.getElementById('shopCatalogContainer');
       if (box) {
         box.innerHTML = GIFTS_CATALOG.map(g => `
@@ -2224,6 +2638,7 @@
 
     window.buyGiftAction = async function(giftId, price) {
       if (!currentUser) return;
+      playTapSound();
       if ((currentUser.stars || 0) < price) {
         return window.showToast("Недостаточно звёзд для покупки!", true);
       }
@@ -2244,6 +2659,7 @@
 
     // Avatar Customization
     window.openAvatarModal = function() {
+      playTapSound();
       document.getElementById('avatarUrlInput').value = '';
       window.setModalVisible('avatarModal', true);
     };
@@ -2262,11 +2678,16 @@
     };
 
     // Auto-login from saved session
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
       const savedUser = window.safeStorage.getItem('fpv_logged_user');
-      if (savedUser) {
-        performLogin(savedUser);
+      if (savedUser && db) {
+        try {
+          const snap = await getDoc(doc(db, 'fpv_users', savedUser));
+          if (snap.exists() && !snap.data().isBanned) {
+            initUserSession(snap.data());
+          }
+        } catch(e) {}
       }
     });
   </script>
