@@ -102,6 +102,27 @@
     </div>
   </div>
 
+  <!-- Confirmation Modal for Purging Test Bots / Accounts -->
+  <div id="confirmPurgeModal" style="display: none;" class="fixed inset-0 z-[180] bg-black/85 backdrop-blur-md flex items-center justify-center p-6">
+    <div class="bg-[#17212b] border border-red-500/50 w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl">
+      <div class="w-14 h-14 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-3 border border-red-500/40">
+        <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-base font-bold text-white mb-1">Очистить всех ботов?</h3>
+      <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+        Это действие навсегда удалит все тестовые аккаунты из базы данных. Ваш аккаунт Создателя (<b class="text-sky-400">@evlan666</b>) останется в безопасности.
+      </p>
+      <div class="flex gap-2">
+        <button onclick="window.closePurgeModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition">
+          Отмена
+        </button>
+        <button onclick="window.executePurgeAllAccounts()" id="btnConfirmPurge" class="flex-1 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white shadow-lg transition">
+          Да, удалить
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Auth Screen (Login / Register via Username & Password) -->
   <div id="authScreen" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col justify-between p-6 overflow-y-auto">
     <div class="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center my-auto">
@@ -314,12 +335,13 @@
         <!-- Quick Action Bar & Stories Carousel -->
         <div class="p-3 bg-[#17212b] border-b border-[#242f3d] space-y-3 shrink-0">
           <div class="flex items-center gap-2">
-            <button onclick="window.openNewChatModal()" class="flex-1 py-2.5 px-3.5 bg-gradient-to-r from-[#2481cc] to-[#50b5ff] hover:opacity-95 active:scale-98 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md transition">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i>
-              <span>+ Написать сообщение</span>
+            <button onclick="window.openNewChatModal()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-[#2481cc] to-[#50b5ff] hover:opacity-95 active:scale-98 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md transition">
+              <i data-lucide="message-square-plus" class="w-4 h-4"></i>
+              <span>+ Написать</span>
             </button>
-            <button onclick="window.openNewChatModal()" class="p-2.5 bg-[#0e1621] hover:bg-[#242f3d] rounded-xl border border-[#242f3d] text-slate-300 transition" title="Найти контакт">
-              <i data-lucide="search" class="w-4 h-4"></i>
+            <button onclick="window.openCreateGroupModal()" class="flex-1 py-2.5 px-3 bg-[#242f3d] hover:bg-[#2b5278] active:scale-98 rounded-xl text-sky-300 text-xs font-bold flex items-center justify-center gap-1.5 border border-[#50b5ff]/30 shadow-md transition">
+              <i data-lucide="users-2" class="w-4 h-4"></i>
+              <span>+ Создать группу</span>
             </button>
           </div>
 
@@ -340,6 +362,7 @@
           <div class="flex gap-2 overflow-x-auto pt-1 border-t border-[#242f3d]/60">
             <button onclick="window.switchChatFilter('all')" id="chatFilterAll" class="px-3 py-1 rounded-full bg-[#2481cc] text-white text-[11px] font-semibold transition shrink-0">Все чаты</button>
             <button onclick="window.switchChatFilter('direct')" id="chatFilterDirect" class="px-3 py-1 rounded-full bg-[#0e1621] text-slate-400 hover:text-white text-[11px] font-semibold transition shrink-0">Личные</button>
+            <button onclick="window.switchChatFilter('groups')" id="chatFilterGroups" class="px-3 py-1 rounded-full bg-[#0e1621] text-slate-400 hover:text-white text-[11px] font-semibold transition shrink-0">Группы</button>
             <button onclick="window.switchChatFilter('support')" id="chatFilterSupport" class="px-3 py-1 rounded-full bg-[#0e1621] text-slate-400 hover:text-white text-[11px] font-semibold transition shrink-0">Сервис</button>
           </div>
         </div>
@@ -363,7 +386,7 @@
             </div>
           </div>
 
-          <!-- Dynamic Active Chats List -->
+          <!-- Dynamic Active Chats List (Direct + Groups) -->
           <div id="dynamicChatsList" class="divide-y divide-[#17212b]">
             <div class="p-8 text-center space-y-3">
               <p class="text-xs text-slate-400">У вас пока нет активных диалогов</p>
@@ -441,7 +464,7 @@
               <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
             </button>
 
-            <!-- Edit Avatar (New from device storage) -->
+            <!-- Edit Avatar -->
             <button onclick="window.openAvatarModal()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition text-left">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
@@ -491,7 +514,7 @@
                 </div>
                 <div>
                   <span id="settingsAdminBtnTitle" class="text-xs font-semibold text-white block">Панель управления</span>
-                  <span id="settingsAdminSubtitle" class="text-[10px] text-slate-400 block">Управление и награды</span>
+                  <span id="settingsAdminSubtitle" class="text-[10px] text-slate-400 block">Управление, награды и очистка</span>
                 </div>
               </div>
               <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>
@@ -608,6 +631,197 @@
     </div>
   </div>
 
+  <!-- Group Chat Room -->
+  <div id="groupChatRoom" style="display: none;" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-3.5 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <button onclick="window.closeGroupChat()" class="p-1 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <div onclick="window.openGroupSettingsModal()" class="relative cursor-pointer shrink-0">
+          <img id="groupHeaderAvatar" src="https://placehold.co/80x80/2481cc/ffffff?text=GRP" class="w-9 h-9 rounded-full object-cover border border-[#50b5ff]">
+        </div>
+        <div onclick="window.openGroupSettingsModal()" class="min-w-0 cursor-pointer">
+          <div class="flex items-center gap-1.5">
+            <span id="groupHeaderTitle" class="text-xs font-bold text-white truncate max-w-[150px]">Группа</span>
+            <span id="groupAdminOnlyTag" style="display: none;" class="px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold">ТОЛЬКО АДМИНЫ</span>
+          </div>
+          <span id="groupHeaderSubtitle" class="text-[10px] text-sky-400 block font-medium truncate">0 участников</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="window.openGroupSettingsModal()" class="p-2 text-slate-400 hover:text-white rounded-full" title="Настройки группы">
+          <i data-lucide="info" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <div id="groupMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <div class="text-center py-10 text-xs text-slate-500">Загрузка сообщений группы...</div>
+    </div>
+
+    <!-- Admin Only Banner when user cannot post -->
+    <div id="groupAdminOnlyBanner" style="display: none;" class="p-3 bg-[#17212b] border-t border-[#242f3d] text-center text-xs text-amber-400 flex items-center justify-center gap-2 safe-bottom">
+      <i data-lucide="lock" class="w-4 h-4"></i>
+      <span>Только администраторы группы могут отправлять сообщения</span>
+    </div>
+
+    <!-- Group Chat Input Bar -->
+    <div id="groupChatInputBar" class="p-2.5 bg-[#17212b] border-t border-[#242f3d] flex items-center gap-2 safe-bottom">
+      <label class="p-2 text-slate-400 hover:text-white rounded-full cursor-pointer">
+        <i data-lucide="paperclip" class="w-5 h-5"></i>
+        <input type="file" id="groupFileInput" onchange="window.handleGroupFileUpload(event)" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.zip">
+      </label>
+      <input type="text" id="groupMessageInput" onkeydown="if(event.key==='Enter') window.sendGroupMessage()" placeholder="Сообщение в группу..." class="flex-1 bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+      <button onclick="window.sendGroupMessage()" class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#2481cc] to-[#50b5ff] hover:opacity-95 text-white flex items-center justify-center shrink-0 shadow">
+        <i data-lucide="send" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Group Profile & Telegram-like Settings Modal -->
+  <div id="groupSettingsModal" style="display: none;" class="fixed inset-0 z-[85] bg-[#0e1621] flex flex-col h-full overflow-hidden">
+    <header class="h-14 bg-[#17212b] px-4 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
+      <div class="flex items-center gap-2.5">
+        <button onclick="window.closeGroupSettingsModal()" class="p-1 -ml-1 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <h3 class="text-sm font-bold text-white">Информация о группе</h3>
+      </div>
+      <button onclick="window.closeGroupSettingsModal()" class="p-1 text-slate-400 hover:text-white rounded-full">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </header>
+
+    <!-- Group Profile Banner -->
+    <div class="p-4 bg-[#17212b] border-b border-[#242f3d] flex items-center gap-3.5">
+      <img id="groupModalAvatar" src="https://placehold.co/100x100/2481cc/ffffff?text=GRP" class="w-16 h-16 rounded-full object-cover border-2 border-[#50b5ff] shadow-md">
+      <div class="min-w-0 flex-1">
+        <h2 id="groupModalTitle" class="text-base font-bold text-white truncate">Название группы</h2>
+        <span id="groupModalMembersCount" class="text-xs text-sky-400 font-medium block mt-0.5">0 участников</span>
+      </div>
+    </div>
+
+    <!-- Group Sub Tabs: Members, Media/Files, Admin Settings -->
+    <div class="flex bg-[#17212b] p-1 mx-3 my-2 rounded-xl text-xs border border-[#242f3d]">
+      <button id="tabGroupMembers" onclick="window.switchGroupTab('members')" class="flex-1 py-1.5 rounded-lg bg-[#2481cc] text-white font-medium transition">
+        Участники
+      </button>
+      <button id="tabGroupMedia" onclick="window.switchGroupTab('media')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium transition">
+        Медиа и файлы
+      </button>
+      <button id="tabGroupAdmin" onclick="window.switchGroupTab('admin')" class="flex-1 py-1.5 rounded-lg text-slate-400 font-medium transition">
+        Настройки
+      </button>
+    </div>
+
+    <!-- Tab 1: Group Members -->
+    <div id="groupContentMembers" class="flex-1 overflow-y-auto p-3 space-y-2">
+      <div class="flex items-center justify-between px-1">
+        <span class="text-xs font-bold text-slate-300">Список участников</span>
+        <button id="btnAddMembersBtn" onclick="window.openAddGroupMembersModal()" class="text-xs text-sky-400 font-semibold hover:underline">
+          + Добавить участников
+        </button>
+      </div>
+      <div id="groupMembersList" class="space-y-1.5">
+        <div class="text-center py-6 text-xs text-slate-500">Загрузка участников...</div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Group Media & Files -->
+    <div id="groupContentMedia" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-3">
+      <div>
+        <h4 class="text-xs font-bold text-slate-300 mb-2 px-1 flex items-center gap-1.5">
+          <i data-lucide="image" class="w-4 h-4 text-sky-400"></i> Фото и видео
+        </h4>
+        <div id="groupMediaGrid" class="grid grid-cols-3 gap-2">
+          <div class="col-span-3 text-center py-6 text-xs text-slate-500">Медиафайлов пока нет</div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-[#242f3d]">
+        <h4 class="text-xs font-bold text-slate-300 mb-2 px-1 flex items-center gap-1.5">
+          <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i> Документы и файлы
+        </h4>
+        <div id="groupFilesList" class="space-y-1.5">
+          <div class="text-center py-6 text-xs text-slate-500">Файлов пока нет</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Group Admin Settings -->
+    <div id="groupContentAdmin" style="display: none;" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
+      <div class="p-3.5 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-3">
+        <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="shield" class="w-4 h-4 text-sky-400"></i> Разрешения участников
+        </h4>
+        
+        <!-- Toggle: Only admins can post -->
+        <div class="flex items-center justify-between pt-1">
+          <div class="mr-3">
+            <span class="text-xs font-semibold text-white block">Отправка сообщений</span>
+            <span class="text-[10px] text-slate-400 block">Разрешить отправку сообщений только администраторам</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="chkOnlyAdminsPost" onchange="window.toggleGroupAdminPosting(this.checked)" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2481cc]"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
+        <button onclick="window.leaveCurrentGroupAction()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-400 transition flex items-center justify-center gap-2">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span>Выйти из группы</span>
+        </button>
+
+        <button id="btnDeleteGroup" onclick="window.deleteCurrentGroupAction()" style="display: none;" class="w-full py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-xs font-bold text-red-400 border border-red-500/30 transition flex items-center justify-center gap-2">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Удалить группу навсегда</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Group Modal -->
+  <div id="createGroupModal" style="display: none;" class="fixed inset-0 z-[75] bg-black/85 backdrop-blur-md flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+    <div class="bg-[#17212b] border border-[#242f3d] w-full max-w-md mx-auto rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <header class="p-4 border-b border-[#242f3d] flex items-center justify-between shrink-0">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="users-2" class="w-4 h-4 text-sky-400"></i>
+          <span>Создать новую группу</span>
+        </h3>
+        <button onclick="window.closeCreateGroupModal()" class="p-1.5 text-slate-400 hover:text-white rounded-full">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </header>
+
+      <div class="p-4 space-y-3 overflow-y-auto flex-1">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Название группы</label>
+          <input type="text" id="newGroupNameInput" placeholder="Например: FPV Pilots, Команда..." class="w-full bg-[#0e1621] border border-[#242f3d] rounded-2xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 ml-1">Выберите участников</label>
+          <div id="createGroupUsersList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+            <div class="text-center py-6 text-xs text-slate-500">Загрузка контактов...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-[#242f3d] flex gap-2 shrink-0">
+        <button onclick="window.closeCreateGroupModal()" class="flex-1 py-3 rounded-2xl bg-slate-800 text-xs text-slate-300 font-semibold hover:bg-slate-700 transition">
+          Отмена
+        </button>
+        <button onclick="window.submitCreateGroup()" id="btnSubmitCreateGroup" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#2481cc] to-[#50b5ff] hover:opacity-95 text-xs text-white font-bold shadow-lg transition">
+          Создать
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- System Support Chat (Channel with Official News) -->
   <div id="supportChatRoom" style="display: none;" class="fixed inset-0 z-50 bg-[#0e1621] flex flex-col h-full overflow-hidden">
     <header class="h-14 bg-[#17212b] px-3.5 flex items-center justify-between border-b border-[#242f3d] shrink-0 safe-top">
@@ -687,11 +901,25 @@
       </button>
     </div>
 
-    <!-- 1. Admin Content: Actions (Awards) -->
+    <!-- 1. Admin Content: Actions (Awards & User Management) -->
     <div id="adminContentActions" class="flex-1 overflow-y-auto p-3 space-y-3 pb-8">
+      
+      <!-- Creator Danger Zone: Purge all test accounts -->
+      <div id="adminPurgeDangerBox" style="display: none;" class="p-3 bg-red-950/40 rounded-2xl border border-red-500/40 flex items-center justify-between">
+        <div class="mr-2">
+          <span class="text-xs font-bold text-red-300 block flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Очистка тестовых ботов
+          </span>
+          <span class="text-[10px] text-slate-400 block mt-0.5">Удалить все аккаунты, кроме Создателя (@evlan666)</span>
+        </div>
+        <button onclick="window.openPurgeConfirmModal()" class="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 active:scale-95 text-white text-[11px] font-bold shrink-0 shadow transition">
+          Очистить всех
+        </button>
+      </div>
+
       <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
         <div class="flex items-center justify-between">
-          <label class="text-[11px] font-semibold text-slate-300">Выберите целевого пользователя:</label>
+          <label class="text-[11px] font-semibold text-slate-300">Целевой пользователь:</label>
           <span id="adminSelectedUserLabel" class="text-[11px] font-bold text-sky-400">@...</span>
         </div>
         <select id="adminTargetUser" onchange="window.handleAdminUserSelectChange()" class="w-full bg-[#0e1621] border border-[#242f3d] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#50b5ff]">
@@ -726,10 +954,10 @@
         </button>
       </div>
 
-      <!-- Quick User Action Cards List -->
+      <!-- Quick User Action Cards List with Delete Buttons -->
       <div class="p-3 bg-[#17212b] rounded-2xl border border-[#242f3d] space-y-2">
-        <span class="text-xs font-bold text-white block">Список зарегистрированных аккаунтов:</span>
-        <div id="adminDirectUserCards" class="space-y-1.5 max-h-48 overflow-y-auto">
+        <span class="text-xs font-bold text-white block">Список аккаунтов (управление и удаление):</span>
+        <div id="adminDirectUserCards" class="space-y-1.5 max-h-56 overflow-y-auto">
           <div class="text-[11px] text-slate-500 py-2 text-center">Загрузка списка...</div>
         </div>
       </div>
@@ -1008,7 +1236,9 @@
     // State Variables
     let currentUser = null;
     let currentPeer = null;
+    let currentGroup = null;
     let allUsersList = [];
+    let allGroupsList = [];
     let currentChatFilter = 'all';
     
     // WebRTC State
@@ -1026,7 +1256,9 @@
 
     let unsubscribeUser = null;
     let unsubscribeUsers = null;
+    let unsubscribeGroups = null;
     let unsubscribeDirectMsgs = null;
+    let unsubscribeGroupMsgs = null;
     let unsubscribeDialogs = null;
     let unsubscribeVerifRequests = null;
     let unsubscribeNews = null;
@@ -1034,7 +1266,6 @@
     // Moderator Daily Limits State
     let modDailyUsage = { starsGiven: 0, giftsGiven: 0 };
 
-    // Sound Generator using Web Audio API
     let audioCtx = null;
     function getAudioCtx() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1108,7 +1339,6 @@
       })[m]);
     }
 
-    // Modal Control Helpers
     window.setModalVisible = (id, show) => {
       const el = document.getElementById(id);
       if (el) el.style.display = show ? 'flex' : 'none';
@@ -1119,6 +1349,9 @@
       window.setModalVisible('bannedModal', false);
       window.handleSignOut();
     };
+    window.closePurgeModal = () => window.setModalVisible('confirmPurgeModal', false);
+    window.openPurgeConfirmModal = () => window.setModalVisible('confirmPurgeModal', true);
+
     window.closeAdminPanel = () => window.setModalVisible('adminPanelModal', false);
     window.closeShopModal = () => window.setModalVisible('shopModal', false);
     window.closeBioModal = () => window.setModalVisible('bioModal', false);
@@ -1144,12 +1377,21 @@
       document.getElementById('avatarUrlInput').value = '';
       window.setModalVisible('avatarModal', true);
     };
+
     window.closeNewChatModal = () => window.setModalVisible('newChatModal', false);
     window.closeDirectChat = () => {
       window.setModalVisible('directChatRoom', false);
       if (unsubscribeDirectMsgs) unsubscribeDirectMsgs();
       currentPeer = null;
     };
+    window.closeGroupChat = () => {
+      window.setModalVisible('groupChatRoom', false);
+      if (unsubscribeGroupMsgs) unsubscribeGroupMsgs();
+      currentGroup = null;
+    };
+    window.closeGroupSettingsModal = () => window.setModalVisible('groupSettingsModal', false);
+    window.closeCreateGroupModal = () => window.setModalVisible('createGroupModal', false);
+
     window.closeSupportChat = () => window.setModalVisible('supportChatRoom', false);
     window.openSupportChat = () => window.setModalVisible('supportChatRoom', true);
     window.closeSettingsSubpage = () => window.setModalVisible('settingsSubpageModal', false);
@@ -1158,7 +1400,6 @@
       window.showToast("Звонок продолжается в фоне");
     };
 
-    // Avatar from Phone Memory Handler (Canvas compression to Base64)
     window.handleAvatarFileSelect = function(e) {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -1236,7 +1477,6 @@
       }
     };
 
-    // Tab Switching for Auth
     window.switchAuthTab = function(tab) {
       playTapSound();
       const tLog = document.getElementById('tabBtnLogin');
@@ -1258,7 +1498,6 @@
       if (window.lucide) lucide.createIcons();
     };
 
-    // Login via Username + Password
     window.handleLoginSubmit = async function() {
       playTapSound();
       const userInput = document.getElementById('loginUsername');
@@ -1336,7 +1575,6 @@
       window.showToast("Вход Создателя выполнен успешно!");
     }
 
-    // Direct Fast Registration
     window.handleRegistrationSubmit = async function() {
       playTapSound();
       const userInput = document.getElementById('regUsername');
@@ -1364,7 +1602,7 @@
       }
 
       if (rawUser === ADMIN_USERNAME.toLowerCase()) {
-        return window.showToast("Этот никнейм зарезервирован для Создателя! Перейдите во вкладку «Войти».", true);
+        return window.showToast("Этот никнейм зарезервирован для Создателя!", true);
       }
 
       const btn = document.getElementById('btnRegisterSubmit');
@@ -1404,7 +1642,6 @@
       }
     };
 
-    // Save Display Name
     window.saveDisplayNameAction = async function() {
       const newName = (document.getElementById('displayNameInput')?.value || '').trim();
       if (!newName) return window.showToast("Имя не может быть пустым!", true);
@@ -1421,7 +1658,6 @@
       }
     };
 
-    // User Session Initialization
     function initUserSession(user) {
       currentUser = user;
       window.safeStorage.setItem('fpv_logged_user', user.username);
@@ -1443,6 +1679,7 @@
       }, (err) => console.warn("User sync error:", err));
 
       listenAllUsers();
+      listenAllGroups();
       listenIncomingCalls();
       listenDialogs();
       listenVerifRequests();
@@ -1490,7 +1727,7 @@
         const sub = document.getElementById('settingsAdminSubtitle');
         const title = document.getElementById('settingsAdminBtnTitle');
         if (title) title.innerText = isOwner ? 'Панель Создателя' : 'Панель Модератора';
-        if (sub) sub.innerText = isOwner ? 'Полный доступ и публикации' : 'Урезанная панель (лимиты 500★ и 2 подарка)';
+        if (sub) sub.innerText = isOwner ? 'Полный доступ, очистка ботов и публикации' : 'Урезанная панель (лимиты 500★ и 2 подарка)';
       }
 
       // Gifts Render
@@ -1509,7 +1746,6 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Switch Main Navigation Tabs
     window.switchMainTab = function(tab) {
       playTapSound();
       const tabs = ['contacts', 'calls', 'chats', 'settings'];
@@ -1534,11 +1770,10 @@
       if (window.lucide) lucide.createIcons();
     };
 
-    // Chat Folder Filter
     window.switchChatFilter = function(filter) {
       playTapSound();
       currentChatFilter = filter;
-      const filters = ['all', 'direct', 'support'];
+      const filters = ['all', 'direct', 'groups', 'support'];
       filters.forEach(f => {
         const btn = document.getElementById(`chatFilter${f.charAt(0).toUpperCase() + f.slice(1)}`);
         if (btn) {
@@ -1551,16 +1786,12 @@
       });
 
       const supportItem = document.getElementById('itemSupportChat');
-      const dynamicList = document.getElementById('dynamicChatsList');
       if (supportItem) {
-        supportItem.style.display = (filter === 'direct') ? 'none' : 'flex';
+        supportItem.style.display = (filter === 'all' || filter === 'support') ? 'flex' : 'none';
       }
-      if (dynamicList) {
-        dynamicList.style.display = (filter === 'support') ? 'none' : 'block';
-      }
+      renderChatsList();
     };
 
-    // Bio Saving
     window.saveBioAction = async function() {
       const bio = document.getElementById('bioTextInput').value.trim();
       if (!currentUser) return;
@@ -1573,7 +1804,6 @@
       }
     };
 
-    // Realtime News Listener for Support Chat & Admin Panel
     function listenSupportNews() {
       if (!db) return;
       if (unsubscribeNews) unsubscribeNews();
@@ -1656,7 +1886,6 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Publish News to Support Channel (Owner Only)
     window.publishNewsAction = async function() {
       const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) return window.showToast("Только Создатель может публиковать новости!", true);
@@ -1683,7 +1912,6 @@
       }
     };
 
-    // Delete News from Support Channel (Owner Only)
     window.deleteNewsAction = async function(newsId) {
       const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) return window.showToast("Только Создатель может удалять новости!", true);
@@ -1696,7 +1924,6 @@
       }
     };
 
-    // Central Users Realtime Listener
     function listenAllUsers() {
       if (!db) return;
       if (unsubscribeUsers) unsubscribeUsers();
@@ -1711,6 +1938,17 @@
         renderAdminUsersSelector();
         renderBannedUsersList();
       }, (err) => console.warn("Users sync error:", err));
+    }
+
+    function listenAllGroups() {
+      if (!db) return;
+      if (unsubscribeGroups) unsubscribeGroups();
+
+      unsubscribeGroups = onSnapshot(collection(db, 'fpv_groups'), (snap) => {
+        allGroupsList = [];
+        snap.forEach(d => allGroupsList.push({ id: d.id, ...d.data() }));
+        renderChatsList();
+      }, (err) => console.warn("Groups sync error:", err));
     }
 
     function renderContactsTab() {
@@ -1752,7 +1990,6 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Stories Carousel
     function renderQuickUsersCarousel() {
       const carousel = document.getElementById('quickUsersCarousel');
       if (!carousel || !currentUser) return;
@@ -1774,7 +2011,552 @@
       `).join('');
     }
 
-    // New Chat Modal Handling
+    window.openCreateGroupModal = function() {
+      playTapSound();
+      document.getElementById('newGroupNameInput').value = '';
+      const list = document.getElementById('createGroupUsersList');
+      if (list && currentUser) {
+        const otherUsers = allUsersList.filter(u => u.username !== currentUser.username && !u.isBanned);
+        if (otherUsers.length === 0) {
+          list.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">Нет других пользователей для группы</div>';
+        } else {
+          list.innerHTML = otherUsers.map(u => `
+            <label class="p-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between cursor-pointer hover:bg-[#242f3d]/50 transition">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <img src="${u.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-8 h-8 rounded-full object-cover">
+                <div class="min-w-0">
+                  <span class="text-xs font-bold text-white block truncate">${escapeHtml(u.displayName || u.username)}</span>
+                  <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(u.username)}</span>
+                </div>
+              </div>
+              <input type="checkbox" value="${u.username}" class="group-member-checkbox rounded text-sky-500 w-4 h-4 bg-[#17212b] border-[#242f3d]">
+            </label>
+          `).join('');
+        }
+      }
+      window.setModalVisible('createGroupModal', true);
+    };
+
+    window.submitCreateGroup = async function() {
+      if (!currentUser || !db) return;
+      playTapSound();
+
+      const name = (document.getElementById('newGroupNameInput')?.value || '').trim();
+      if (!name) return window.showToast("Введите название группы!", true);
+
+      const checkboxes = document.querySelectorAll('.group-member-checkbox:checked');
+      const selectedMembers = Array.from(checkboxes).map(cb => cb.value);
+
+      const members = Array.from(new Set([currentUser.username, ...selectedMembers]));
+      const btn = document.getElementById('btnSubmitCreateGroup');
+      if (btn) { btn.disabled = true; btn.innerText = "Создание..."; }
+
+      try {
+        const groupRef = await addDoc(collection(db, 'fpv_groups'), {
+          name: name,
+          avatarUrl: `https://placehold.co/100x100/2481cc/ffffff?text=${encodeURIComponent(name.slice(0, 2).toUpperCase())}`,
+          creator: currentUser.username,
+          admins: [currentUser.username],
+          members: members,
+          onlyAdminsCanPost: false,
+          lastMsg: "Группа создана",
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+
+        window.closeCreateGroupModal();
+        window.showToast(`Группа «${name}» успешно создана!`);
+        window.openGroupChat(groupRef.id);
+      } catch(e) {
+        window.showToast("Ошибка создания группы: " + e.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Создать"; }
+      }
+    };
+
+    window.openGroupChat = async function(groupId) {
+      if (!currentUser || !db) return;
+      playTapSound();
+
+      try {
+        let groupData = allGroupsList.find(g => g.id === groupId);
+        if (!groupData) {
+          const snap = await getDoc(doc(db, 'fpv_groups', groupId));
+          if (!snap.exists()) return window.showToast("Группа не найдена", true);
+          groupData = { id: snap.id, ...snap.data() };
+        }
+
+        currentGroup = groupData;
+        updateGroupChatUI();
+        window.setModalVisible('groupChatRoom', true);
+        listenGroupMessages();
+      } catch(e) {
+        window.showToast("Ошибка открытия группы: " + e.message, true);
+      }
+    };
+
+    function updateGroupChatUI() {
+      if (!currentGroup || !currentUser) return;
+
+      document.getElementById('groupHeaderTitle').innerText = currentGroup.name;
+      document.getElementById('groupHeaderAvatar').src = currentGroup.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=GRP';
+      document.getElementById('groupHeaderSubtitle').innerText = `${currentGroup.members?.length || 1} участников`;
+
+      const isGroupAdmin = (currentGroup.admins || []).includes(currentUser.username) || currentGroup.creator === currentUser.username;
+      const tag = document.getElementById('groupAdminOnlyTag');
+      if (tag) tag.style.display = currentGroup.onlyAdminsCanPost ? 'inline-block' : 'none';
+
+      const banner = document.getElementById('groupAdminOnlyBanner');
+      const inputBar = document.getElementById('groupChatInputBar');
+      if (currentGroup.onlyAdminsCanPost && !isGroupAdmin) {
+        if (banner) banner.style.display = 'flex';
+        if (inputBar) inputBar.style.display = 'none';
+      } else {
+        if (banner) banner.style.display = 'none';
+        if (inputBar) inputBar.style.display = 'flex';
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function listenGroupMessages() {
+      if (!db || !currentUser || !currentGroup) return;
+      if (unsubscribeGroupMsgs) unsubscribeGroupMsgs();
+
+      const col = collection(db, 'fpv_groups', currentGroup.id, 'messages');
+      unsubscribeGroupMsgs = onSnapshot(col, (snap) => {
+        const box = document.getElementById('groupMessagesContainer');
+        if (!box) return;
+
+        const msgs = [];
+        snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
+        msgs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+        if (msgs.length === 0) {
+          box.innerHTML = '<div class="text-center py-10 text-xs text-slate-500">Сообщений в группе пока нет. Напишите первым!</div>';
+          return;
+        }
+
+        box.innerHTML = msgs.map(m => {
+          const isMe = m.sender === currentUser.username;
+          const time = new Date(m.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          let mediaHtml = '';
+
+          if (m.mediaUrl) {
+            if (m.mediaType?.startsWith('image/')) {
+              mediaHtml = `<img src="${m.mediaUrl}" class="rounded-xl max-h-48 w-full object-cover mb-1.5 cursor-pointer" onclick="window.open('${m.mediaUrl}')">`;
+            } else if (m.mediaType?.startsWith('video/')) {
+              mediaHtml = `<video src="${m.mediaUrl}" controls class="rounded-xl max-h-48 w-full mb-1.5"></video>`;
+            } else {
+              mediaHtml = `<a href="${m.mediaUrl}" download="${m.mediaName || 'file'}" class="p-2 bg-black/20 rounded-xl flex items-center gap-2 text-[11px] mb-1.5"><i data-lucide="file" class="w-4 h-4"></i><span class="truncate">${escapeHtml(m.mediaName || 'Файл')}</span></a>`;
+            }
+          }
+
+          return `
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+              <span class="text-[10px] text-slate-400 mb-0.5 px-1">${isMe ? 'Вы' : escapeHtml(m.senderName || m.sender)}</span>
+              <div class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md ${isMe ? 'bg-gradient-to-r from-[#2481cc] to-[#50b5ff] text-white rounded-br-xs' : 'bg-[#17212b] text-slate-100 rounded-bl-xs border border-[#242f3d]'}">
+                ${mediaHtml}
+                ${m.text ? `<p class="leading-relaxed break-words">${escapeHtml(m.text)}</p>` : ''}
+                <div class="flex items-center justify-end gap-1 mt-1 opacity-75 text-[9px]">
+                  <span>${time}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        box.scrollTop = box.scrollHeight;
+        if (window.lucide) lucide.createIcons();
+      }, (err) => console.warn("Group msgs error:", err));
+    }
+
+    window.sendGroupMessage = async function() {
+      const inp = document.getElementById('groupMessageInput');
+      const text = (inp?.value || '').trim();
+      if (!text || !currentUser || !currentGroup) return;
+
+      const isGroupAdmin = (currentGroup.admins || []).includes(currentUser.username) || currentGroup.creator === currentUser.username;
+      if (currentGroup.onlyAdminsCanPost && !isGroupAdmin) {
+        return window.showToast("Только администраторы могут писать в этой группе!", true);
+      }
+
+      inp.value = '';
+      playMessageSentSound();
+      await pushGroupMessageRecord({ text });
+    };
+
+    window.handleGroupFileUpload = function(e) {
+      const file = e.target.files?.[0];
+      if (!file || !currentUser || !currentGroup) return;
+
+      const isGroupAdmin = (currentGroup.admins || []).includes(currentUser.username) || currentGroup.creator === currentUser.username;
+      if (currentGroup.onlyAdminsCanPost && !isGroupAdmin) {
+        return window.showToast("Только администраторы могут отправлять файлы!", true);
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        return window.showToast("Файл слишком большой (макс. 2 МБ)", true);
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function() {
+        playMessageSentSound();
+        await pushGroupMessageRecord({
+          text: '',
+          mediaUrl: reader.result,
+          mediaType: file.type,
+          mediaName: file.name
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    };
+
+    async function pushGroupMessageRecord(payload) {
+      if (!currentUser || !currentGroup || !db) return;
+
+      const msgData = {
+        sender: currentUser.username,
+        senderName: currentUser.displayName || currentUser.username,
+        createdAt: Date.now(),
+        ...payload
+      };
+
+      try {
+        await addDoc(collection(db, 'fpv_groups', currentGroup.id, 'messages'), msgData);
+        const preview = payload.text || (payload.mediaType?.startsWith('image/') ? '📷 Фотография' : '📎 Файл');
+
+        await updateDoc(doc(db, 'fpv_groups', currentGroup.id), {
+          lastMsg: `${currentUser.displayName || currentUser.username}: ${preview}`,
+          updatedAt: Date.now()
+        });
+      } catch(e) {
+        window.showToast("Ошибка отправки: " + e.message, true);
+      }
+    }
+
+    window.openGroupSettingsModal = function() {
+      if (!currentGroup || !currentUser) return;
+      playTapSound();
+
+      document.getElementById('groupModalTitle').innerText = currentGroup.name;
+      document.getElementById('groupModalAvatar').src = currentGroup.avatarUrl || 'https://placehold.co/100x100/2481cc/ffffff?text=GRP';
+      document.getElementById('groupModalMembersCount').innerText = `${currentGroup.members?.length || 1} участников`;
+
+      const isCreator = currentGroup.creator === currentUser.username;
+      const isAdmin = (currentGroup.admins || []).includes(currentUser.username) || isCreator;
+
+      const delBtn = document.getElementById('btnDeleteGroup');
+      if (delBtn) delBtn.style.display = isCreator ? 'flex' : 'none';
+
+      const chk = document.getElementById('chkOnlyAdminsPost');
+      if (chk) {
+        chk.checked = !!currentGroup.onlyAdminsCanPost;
+        chk.disabled = !isAdmin;
+      }
+
+      renderGroupMembersList();
+      renderGroupMediaAndFiles();
+      window.switchGroupTab('members');
+      window.setModalVisible('groupSettingsModal', true);
+    };
+
+    window.switchGroupTab = function(tab) {
+      playTapSound();
+      ['members', 'media', 'admin'].forEach(t => {
+        const btn = document.getElementById(`tabGroup${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const content = document.getElementById(`groupContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) {
+          btn.className = (t === tab)
+            ? 'flex-1 py-1.5 rounded-lg bg-[#2481cc] text-white font-medium transition'
+            : 'flex-1 py-1.5 rounded-lg text-slate-400 font-medium transition';
+        }
+        if (content) {
+          content.style.display = (t === tab) ? 'block' : 'none';
+        }
+      });
+      if (window.lucide) lucide.createIcons();
+    };
+
+    function renderGroupMembersList() {
+      const box = document.getElementById('groupMembersList');
+      if (!box || !currentGroup || !currentUser) return;
+
+      const members = currentGroup.members || [];
+      const isCreator = currentGroup.creator === currentUser.username;
+
+      box.innerHTML = members.map(mUsername => {
+        const uData = allUsersList.find(x => x.username === mUsername) || { displayName: mUsername, avatarUrl: '' };
+        const isMemCreator = currentGroup.creator === mUsername;
+        const isMemAdmin = (currentGroup.admins || []).includes(mUsername);
+
+        let badge = '<span class="px-1.5 py-0.5 rounded text-[9px] bg-slate-800 text-slate-400">Участник</span>';
+        if (isMemCreator) {
+          badge = '<span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-300 font-bold">ВЛАДЕЛЕЦ</span>';
+        } else if (isMemAdmin) {
+          badge = '<span class="px-1.5 py-0.5 rounded text-[9px] bg-sky-500/20 text-sky-400 font-bold">АДМИН</span>';
+        }
+
+        let actions = '';
+        if (isCreator && !isMemCreator) {
+          actions = `
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="window.toggleMemberAdminRole('${mUsername}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-sky-400 font-medium">
+                ${isMemAdmin ? 'Снять админа' : 'Сделать админом'}
+              </button>
+              <button onclick="window.kickGroupMember('${mUsername}')" class="p-1 text-red-400 hover:text-red-300" title="Исключить">
+                <i data-lucide="user-minus" class="w-4 h-4"></i>
+              </button>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="p-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between">
+            <div class="flex items-center gap-2.5 min-w-0 mr-2">
+              <img src="${uData.avatarUrl || 'https://placehold.co/60x60/2481cc/ffffff?text=U'}" class="w-8 h-8 rounded-full object-cover">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1">
+                  <span class="text-xs font-bold text-white truncate">${escapeHtml(uData.displayName || mUsername)}</span>
+                  ${badge}
+                </div>
+                <span class="text-[10px] text-slate-400 block truncate">@${escapeHtml(mUsername)}</span>
+              </div>
+            </div>
+            ${actions}
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    window.toggleMemberAdminRole = async function(targetUsername) {
+      if (!currentGroup || currentGroup.creator !== currentUser.username) return;
+      playTapSound();
+
+      let admins = currentGroup.admins || [];
+      if (admins.includes(targetUsername)) {
+        admins = admins.filter(a => a !== targetUsername);
+      } else {
+        admins.push(targetUsername);
+      }
+
+      try {
+        await updateDoc(doc(db, 'fpv_groups', currentGroup.id), { admins: admins });
+        currentGroup.admins = admins;
+        renderGroupMembersList();
+        updateGroupChatUI();
+        window.showToast("Права администратора обновлены!");
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    window.kickGroupMember = async function(targetUsername) {
+      if (!currentGroup || currentGroup.creator !== currentUser.username) return;
+      playTapSound();
+
+      const newMembers = (currentGroup.members || []).filter(m => m !== targetUsername);
+      const newAdmins = (currentGroup.admins || []).filter(a => a !== targetUsername);
+
+      try {
+        await updateDoc(doc(db, 'fpv_groups', currentGroup.id), {
+          members: newMembers,
+          admins: newAdmins
+        });
+        currentGroup.members = newMembers;
+        currentGroup.admins = newAdmins;
+        renderGroupMembersList();
+        updateGroupChatUI();
+        window.showToast(`Пользователь @${targetUsername} исключен из группы`);
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    window.toggleGroupAdminPosting = async function(val) {
+      if (!currentGroup || !currentUser) return;
+      const isAdmin = (currentGroup.admins || []).includes(currentUser.username) || currentGroup.creator === currentUser.username;
+      if (!isAdmin) return window.showToast("Только администраторы могут менять этот параметр!", true);
+
+      try {
+        await updateDoc(doc(db, 'fpv_groups', currentGroup.id), { onlyAdminsCanPost: val });
+        currentGroup.onlyAdminsCanPost = val;
+        updateGroupChatUI();
+        window.showToast(val ? "Режим «Только админы могут писать» включен" : "Все участники могут писать");
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    window.leaveCurrentGroupAction = async function() {
+      if (!currentGroup || !currentUser) return;
+      playTapSound();
+
+      const newMembers = (currentGroup.members || []).filter(m => m !== currentUser.username);
+      const newAdmins = (currentGroup.admins || []).filter(a => a !== currentUser.username);
+
+      try {
+        await updateDoc(doc(db, 'fpv_groups', currentGroup.id), {
+          members: newMembers,
+          admins: newAdmins
+        });
+        window.closeGroupSettingsModal();
+        window.closeGroupChat();
+        window.showToast("Вы вышли из группы");
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    window.deleteCurrentGroupAction = async function() {
+      if (!currentGroup || currentGroup.creator !== currentUser.username) return;
+      playTapSound();
+
+      try {
+        await deleteDoc(doc(db, 'fpv_groups', currentGroup.id));
+        window.closeGroupSettingsModal();
+        window.closeGroupChat();
+        window.showToast("Группа удалена навсегда");
+      } catch(e) {
+        window.showToast("Ошибка: " + e.message, true);
+      }
+    };
+
+    async function renderGroupMediaAndFiles() {
+      if (!currentGroup || !db) return;
+      const mediaGrid = document.getElementById('groupMediaGrid');
+      const filesList = document.getElementById('groupFilesList');
+      if (!mediaGrid || !filesList) return;
+
+      try {
+        const snap = await getDocs(collection(db, 'fpv_groups', currentGroup.id, 'messages'));
+        const msgs = [];
+        snap.forEach(d => msgs.push(d.data()));
+
+        const mediaMsgs = msgs.filter(m => m.mediaUrl && (m.mediaType?.startsWith('image/') || m.mediaType?.startsWith('video/')));
+        const fileMsgs = msgs.filter(m => m.mediaUrl && (!m.mediaType?.startsWith('image/') && !m.mediaType?.startsWith('video/')));
+
+        if (mediaMsgs.length === 0) {
+          mediaGrid.innerHTML = '<div class="col-span-3 text-center py-6 text-xs text-slate-500">Медиафайлов пока нет</div>';
+        } else {
+          mediaGrid.innerHTML = mediaMsgs.map(m => `
+            <div class="aspect-square rounded-xl overflow-hidden bg-black/40 border border-[#242f3d] cursor-pointer" onclick="window.open('${m.mediaUrl}')">
+              ${m.mediaType?.startsWith('image/') 
+                ? `<img src="${m.mediaUrl}" class="w-full h-full object-cover">` 
+                : `<video src="${m.mediaUrl}" class="w-full h-full object-cover"></video>`}
+            </div>
+          `).join('');
+        }
+
+        if (fileMsgs.length === 0) {
+          filesList.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">Файлов пока нет</div>';
+        } else {
+          filesList.innerHTML = fileMsgs.map(m => `
+            <a href="${m.mediaUrl}" download="${m.mediaName || 'file'}" class="p-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between text-xs text-slate-300 hover:text-white transition">
+              <div class="flex items-center gap-2 truncate">
+                <i data-lucide="file" class="w-4 h-4 text-sky-400 shrink-0"></i>
+                <span class="truncate">${escapeHtml(m.mediaName || 'Документ')}</span>
+              </div>
+              <i data-lucide="download" class="w-4 h-4 text-slate-500 shrink-0"></i>
+            </a>
+          `).join('');
+        }
+
+        if (window.lucide) lucide.createIcons();
+      } catch(e) {}
+    }
+
+    let userDialogsCache = [];
+    function listenDialogs() {
+      if (!db || !currentUser) return;
+      if (unsubscribeDialogs) unsubscribeDialogs();
+
+      const col = collection(db, 'fpv_dialogs', currentUser.username, 'items');
+      unsubscribeDialogs = onSnapshot(col, (snap) => {
+        userDialogsCache = [];
+        snap.forEach(d => userDialogsCache.push(d.data()));
+        renderChatsList();
+      }, (err) => console.warn("Dialogs sync error:", err));
+    }
+
+    function renderChatsList() {
+      const box = document.getElementById('dynamicChatsList');
+      if (!box || !currentUser) return;
+
+      const directChats = userDialogsCache.map(d => ({ ...d, isGroup: false }));
+      const userGroups = allGroupsList
+        .filter(g => (g.members || []).includes(currentUser.username))
+        .map(g => ({
+          peer: g.id,
+          displayName: g.name,
+          avatarUrl: g.avatarUrl,
+          lastMsg: g.lastMsg || 'Группа',
+          updatedAt: g.updatedAt || g.createdAt || 0,
+          isGroup: true,
+          membersCount: g.members?.length || 1
+        }));
+
+      let combined = [];
+      if (currentChatFilter === 'all') {
+        combined = [...directChats, ...userGroups];
+      } else if (currentChatFilter === 'direct') {
+        combined = directChats;
+      } else if (currentChatFilter === 'groups') {
+        combined = userGroups;
+      } else if (currentChatFilter === 'support') {
+        combined = [];
+      }
+
+      combined.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+      if (combined.length === 0) {
+        box.innerHTML = `
+          <div class="p-8 text-center space-y-3">
+            <p class="text-xs text-slate-400">Диалогов в этом разделе пока нет</p>
+            <div class="flex gap-2 justify-center">
+              <button onclick="window.openNewChatModal()" class="px-3.5 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl">
+                Написать контакту
+              </button>
+              <button onclick="window.openCreateGroupModal()" class="px-3.5 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-amber-400 text-xs font-semibold rounded-xl">
+                Создать группу
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = combined.map(item => {
+        const clickFn = item.isGroup ? `window.openGroupChat('${item.peer}')` : `window.openDirectChat('${item.peer}')`;
+        const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const badge = item.isGroup ? `<span class="px-1 py-0.2 rounded bg-sky-500/20 text-sky-400 text-[9px] font-bold">ГРУППА</span>` : '';
+
+        return `
+          <div onclick="${clickFn}" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/60 cursor-pointer transition">
+            <div class="relative shrink-0">
+              <img src="${item.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U'}" class="w-12 h-12 rounded-full object-cover border border-[#242f3d]">
+              ${item.isGroup ? '<span class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-sky-500 border border-[#17212b] flex items-center justify-center text-[9px] text-white"><i data-lucide="users" class="w-2.5 h-2.5"></i></span>' : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-0.5">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-xs font-bold text-white truncate">${escapeHtml(item.displayName)}</span>
+                  ${badge}
+                </div>
+                <span class="text-[10px] text-slate-500 font-medium shrink-0 ml-2">${timeStr}</span>
+              </div>
+              <p class="text-xs text-slate-400 truncate">${escapeHtml(item.lastMsg)}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
     window.openNewChatModal = function() {
       playTapSound();
       document.getElementById('newChatSearchInput').value = '';
@@ -1829,7 +2611,6 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Direct Chat Messaging
     window.openDirectChat = async function(peerUsername) {
       if (!db || !currentUser) return;
       playTapSound();
@@ -1893,36 +2674,15 @@
             }
           }
 
-          const reactions = m.reactions || {};
-          let reactionsHtml = '';
-          if (Object.keys(reactions).length > 0) {
-            reactionsHtml = `
-              <div class="flex gap-1 mt-1 flex-wrap">
-                ${Object.entries(reactions).map(([emo, count]) => `
-                  <span class="px-1.5 py-0.5 rounded-full bg-black/30 text-[10px] flex items-center gap-0.5">
-                    ${emo} <span class="font-bold text-[9px]">${count}</span>
-                  </span>
-                `).join('')}
-              </div>
-            `;
-          }
-
           return `
             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} group">
               <div class="max-w-[82%] rounded-2xl px-3.5 py-2.5 text-xs shadow-md ${isMe ? 'bg-gradient-to-r from-[#2481cc] to-[#50b5ff] text-white rounded-br-xs' : 'bg-[#17212b] text-slate-100 rounded-bl-xs border border-[#242f3d]'}">
                 ${mediaHtml}
                 ${m.text ? `<p class="leading-relaxed break-words">${escapeHtml(m.text)}</p>` : ''}
-                ${reactionsHtml}
                 <div class="flex items-center justify-end gap-1 mt-1 opacity-75 text-[9px]">
                   <span>${time}</span>
                   ${isMe ? '<span class="font-bold">✓✓</span>' : ''}
                 </div>
-              </div>
-              <div class="opacity-0 group-hover:opacity-100 transition flex gap-1 mt-0.5 px-1">
-                <button onclick="window.reactToMessage('${m.id}', '❤️')" class="text-[11px] hover:scale-125 transition">❤️</button>
-                <button onclick="window.reactToMessage('${m.id}', '👍')" class="text-[11px] hover:scale-125 transition">👍</button>
-                <button onclick="window.reactToMessage('${m.id}', '🔥')" class="text-[11px] hover:scale-125 transition">🔥</button>
-                <button onclick="window.reactToMessage('${m.id}', '😂')" class="text-[11px] hover:scale-125 transition">😂</button>
               </div>
             </div>
           `;
@@ -1932,21 +2692,6 @@
         if (window.lucide) lucide.createIcons();
       }, (err) => console.warn("Messages sync error:", err));
     }
-
-    window.reactToMessage = async function(msgId, emoji) {
-      if (!currentUser || !currentPeer) return;
-      playTapSound();
-      const roomId = getRoomId(currentUser.username, currentPeer.username);
-      const msgRef = doc(db, 'fpv_direct_chats', roomId, 'messages', msgId);
-      try {
-        const snap = await getDoc(msgRef);
-        if (snap.exists()) {
-          const currentReactions = snap.data().reactions || {};
-          currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
-          await updateDoc(msgRef, { reactions: currentReactions });
-        }
-      } catch(e) {}
-    };
 
     window.sendDirectMessage = async function() {
       const inp = document.getElementById('directMessageInput');
@@ -2015,53 +2760,6 @@
       }
     }
 
-    // Active Dialogs Listener
-    function listenDialogs() {
-      if (!db || !currentUser) return;
-      if (unsubscribeDialogs) unsubscribeDialogs();
-
-      const col = collection(db, 'fpv_dialogs', currentUser.username, 'items');
-      unsubscribeDialogs = onSnapshot(col, (snap) => {
-        const box = document.getElementById('dynamicChatsList');
-        if (!box) return;
-
-        const items = [];
-        snap.forEach(d => items.push(d.data()));
-        items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-        if (items.length === 0) {
-          box.innerHTML = `
-            <div class="p-8 text-center space-y-3">
-              <p class="text-xs text-slate-400">У вас пока нет активных диалогов</p>
-              <button onclick="window.openNewChatModal()" class="px-4 py-2 bg-[#17212b] hover:bg-[#242f3d] border border-[#242f3d] text-sky-400 text-xs font-semibold rounded-xl">
-                Выбрать контакт для общения
-              </button>
-            </div>
-          `;
-          return;
-        }
-
-        box.innerHTML = items.map(chat => `
-          <div onclick="window.openDirectChat('${chat.peer}')" class="px-4 py-3 flex items-center gap-3 hover:bg-[#17212b]/60 cursor-pointer transition">
-            <img src="${chat.avatarUrl || 'https://placehold.co/80x80/2481cc/ffffff?text=U'}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-[#242f3d]">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between mb-0.5">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-xs font-bold text-white truncate">${escapeHtml(chat.displayName)}</span>
-                  ${chat.isVerified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-sky-400 fill-sky-400"></i>' : ''}
-                </div>
-                <span class="text-[10px] text-slate-500 font-medium">${new Date(chat.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <p class="text-xs text-slate-400 truncate">${escapeHtml(chat.lastMsg)}</p>
-            </div>
-          </div>
-        `).join('');
-
-        if (window.lucide) lucide.createIcons();
-      }, (err) => console.warn("Dialogs sync error:", err));
-    }
-
-    // WebRTC Calls Implementation with Camera Flip Support
     const rtcConfig = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -2289,7 +2987,6 @@
       }
     };
 
-    // Flip Camera (Front <-> Back Switch)
     window.flipCallCamera = async function() {
       if (!localStream) return;
       playTapSound();
@@ -2334,7 +3031,6 @@
       }
     };
 
-    // Admin Panel Logic with Moderator limits & News section
     window.openAdminPanel = async function() {
       if (!currentUser) return;
       playTapSound();
@@ -2357,6 +3053,9 @@
         banner.style.display = isMod ? 'flex' : 'none';
         updateModLimitDisplay();
       }
+
+      const dangerBox = document.getElementById('adminPurgeDangerBox');
+      if (dangerBox) dangerBox.style.display = isOwner ? 'flex' : 'none';
 
       // Hide restricted controls for moderator
       document.getElementById('btnAssignMod').style.display = isOwner ? 'block' : 'none';
@@ -2486,6 +3185,13 @@
               <button onclick="window.adminSelectAndAward('${u.username}', 'verif')" class="px-2 py-1 rounded-lg bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 text-[10px] font-bold">Галочка</button>
               <button onclick="window.adminSelectAndAward('${u.username}', 'premium')" class="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-[10px] font-bold">Prem</button>
             `;
+            if (u.username !== ADMIN_USERNAME) {
+              buttonsHtml += `
+                <button onclick="window.adminDeleteSingleUser('${u.username}')" class="p-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-xs font-bold transition" title="Удалить аккаунт">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              `;
+            }
           }
           return `
             <div class="p-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between">
@@ -2507,6 +3213,44 @@
       }
     }
 
+    window.adminDeleteSingleUser = async function(targetUsername) {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) return window.showToast("Только Создатель может удалять аккаунты!", true);
+      if (targetUsername === ADMIN_USERNAME) return window.showToast("Нельзя удалить аккаунт Создателя!", true);
+
+      try {
+        await deleteDoc(doc(db, 'fpv_users', targetUsername));
+        window.showToast(`Аккаунт @${targetUsername} удален из базы данных`);
+      } catch(e) {
+        window.showToast("Ошибка удаления: " + e.message, true);
+      }
+    };
+
+    window.executePurgeAllAccounts = async function() {
+      const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
+      if (!isOwner) return window.showToast("Только Создатель может очищать базу!", true);
+
+      const btn = document.getElementById('btnConfirmPurge');
+      if (btn) { btn.disabled = true; btn.innerText = "Очистка..."; }
+
+      try {
+        const usersToDelete = allUsersList.filter(u => u.username !== ADMIN_USERNAME);
+        let deletedCount = 0;
+
+        for (const u of usersToDelete) {
+          await deleteDoc(doc(db, 'fpv_users', u.username));
+          deletedCount++;
+        }
+
+        window.closePurgeModal();
+        window.showToast(`Успешно очищено ${deletedCount} тестовых аккаунтов!`);
+      } catch(e) {
+        window.showToast("Ошибка при очистке: " + e.message, true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "Да, удалить"; }
+      }
+    };
+
     window.handleAdminUserSelectChange = function() {
       const select = document.getElementById('adminTargetUser');
       const label = document.getElementById('adminSelectedUserLabel');
@@ -2525,7 +3269,6 @@
       else if (type === 'premium') window.adminGivePremium();
     };
 
-    // Moderator: Limit 500 stars per day! Owner: Unlimited
     window.adminGiveStars = async function(count = 500) {
       const target = document.getElementById('adminTargetUser').value;
       if (!target) return window.showToast("Выберите пользователя из списка!", true);
@@ -2664,7 +3407,6 @@
       }
     };
 
-    // Bans Implementation (OWNER ONLY)
     window.banUserAction = async function() {
       const isOwner = currentUser && (currentUser.role === 'owner' || currentUser.username === ADMIN_USERNAME);
       if (!isOwner) {
@@ -2735,7 +3477,6 @@
       `).join('');
     }
 
-    // Verification Requests Queue (Strictly Owner Only)
     window.requestVerification = async function() {
       if (!currentUser || !db) return;
       playTapSound();
@@ -2831,7 +3572,6 @@
       }
     };
 
-    // Subpages Settings Content
     window.openSettingsSubpage = function(sub) {
       playTapSound();
       const t = document.getElementById('settingsSubpageTitle');
@@ -2855,7 +3595,6 @@
       window.setModalVisible('settingsSubpageModal', true);
     };
 
-    // Shop Catalog
     window.openShopModal = function() {
       playTapSound();
       const box = document.getElementById('shopCatalogContainer');
@@ -2895,7 +3634,6 @@
       }
     };
 
-    // Auto-login from saved local session
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
 
